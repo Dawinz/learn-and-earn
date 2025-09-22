@@ -1,0 +1,45 @@
+services:
+  - type: web
+    name: learn-earn-backend
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: cd learn-earn-backend && npm ci && npm run build
+    startCommand: cd learn-earn-backend && npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGO_URL
+        fromDatabase:
+          name: learn-earn-db
+          property: connectionString
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: APP_PEPPER
+        generateValue: true
+      - key: SAFETY_MARGIN
+        value: "0.6"
+      - key: MIN_PAYOUT_USD
+        value: "5"
+      - key: PAYOUT_COOLDOWN_HOURS
+        value: "48"
+      - key: MAX_DAILY_EARN_USD
+        value: "0.5"
+      - key: NUMBER_CHANGE_LOCK_DAYS
+        value: "30"
+      - key: EMULATOR_PAYOUTS
+        value: "false"
+      - key: ADMIN_EMAIL
+        value: "admin@learnearn.com"
+      - key: ADMIN_PASSWORD_HASH
+        generateValue: true
+      - key: JWT_SECRET
+        generateValue: true
+
+databases:
+  - name: learn-earn-db
+    plan: free
+    region: oregon
