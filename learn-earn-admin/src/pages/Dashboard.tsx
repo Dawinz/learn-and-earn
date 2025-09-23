@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_ENDPOINTS } from '../config/api';
 import './Dashboard.css';
 
 interface DashboardData {
@@ -64,7 +65,7 @@ export const Dashboard: React.FC = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:8080/api/admin/dashboard');
+      const response = await axios.get(API_ENDPOINTS.DASHBOARD);
       setData(response.data);
     } catch (err) {
       setError('Failed to load dashboard data');

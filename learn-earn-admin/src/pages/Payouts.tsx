@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_ENDPOINTS } from '../config/api';
 import './Payouts.css';
 
 interface Payout {
@@ -27,8 +28,8 @@ export const Payouts: React.FC = () => {
     try {
       setLoading(true);
       const url = filter === 'all' 
-        ? 'http://localhost:8080/api/admin/payouts'
-        : `http://localhost:8080/api/admin/payouts?status=${filter}`;
+        ? API_ENDPOINTS.PAYOUTS
+        : `${API_ENDPOINTS.PAYOUTS}?status=${filter}`;
       const response = await axios.get(url);
       setPayouts(response.data.payouts);
     } catch (err) {
@@ -41,7 +42,7 @@ export const Payouts: React.FC = () => {
 
   const updatePayoutStatus = async (payoutId: string, status: 'paid' | 'rejected', txRef?: string) => {
     try {
-      await axios.put(`http://localhost:8080/api/admin/payouts/${payoutId}`, {
+      await axios.put(`${API_ENDPOINTS.PAYOUTS}/${payoutId}`, {
         status,
         txRef,
         adminNotes: `Updated by admin at ${new Date().toISOString()}`

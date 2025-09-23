@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_ENDPOINTS } from '../config/api';
 import './Settings.css';
 
 interface Settings {
@@ -36,7 +37,7 @@ export const Settings: React.FC = () => {
   const fetchSettings = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:8080/api/admin/settings');
+      const response = await axios.get(API_ENDPOINTS.SETTINGS);
       setSettings(response.data.settings);
     } catch (err) {
       setError('Failed to load settings');
@@ -50,7 +51,7 @@ export const Settings: React.FC = () => {
     try {
       setSaving(true);
       setError(null);
-      await axios.put('http://localhost:8080/api/admin/settings', settings);
+      await axios.put(API_ENDPOINTS.SETTINGS, settings);
       setSuccess('Settings saved successfully!');
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {

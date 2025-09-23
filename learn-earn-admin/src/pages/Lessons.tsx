@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_ENDPOINTS } from '../config/api';
 import './Lessons.css';
 
 interface Lesson {
@@ -60,8 +61,8 @@ export const Lessons: React.FC = () => {
     try {
       setLoading(true);
       const url = showPublished !== undefined 
-        ? `http://localhost:8080/api/admin/lessons?published=${showPublished}`
-        : 'http://localhost:8080/api/admin/lessons';
+        ? `${API_ENDPOINTS.LESSONS}?published=${showPublished}`
+        : API_ENDPOINTS.LESSONS;
       const response = await axios.get(url);
       setLessons(response.data.lessons);
     } catch (err) {
@@ -74,7 +75,7 @@ export const Lessons: React.FC = () => {
 
   const togglePublish = async (lessonId: string, currentStatus: boolean) => {
     try {
-      await axios.put(`http://localhost:8080/api/admin/lessons/${lessonId}`, {
+      await axios.put(`${API_ENDPOINTS.LESSONS}/${lessonId}`, {
         isPublished: !currentStatus
       });
       fetchLessons(); // Refresh the list
@@ -116,7 +117,7 @@ export const Lessons: React.FC = () => {
     
     try {
       setSaving(true);
-      await axios.put(`http://localhost:8080/api/admin/lessons/${editingLesson._id}`, editData);
+      await axios.put(`${API_ENDPOINTS.LESSONS}/${editingLesson._id}`, editData);
       fetchLessons(); // Refresh the list
       closeEditModal();
     } catch (err) {
