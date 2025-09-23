@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import { apiLimiter } from './middleware/rateLimit';
 
 // Import routes
+import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
 import earningRoutes from './routes/earningRoutes';
 import payoutRoutes from './routes/payoutRoutes';
@@ -26,9 +27,16 @@ const PORT = process.env.PORT || 8080;
 app.use(helmet());
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://your-admin-domain.com', 'https://your-mobile-app.com']
+    ? [
+        'https://learn-earn-admin-otyulpxc5-dawson-s-projects.vercel.app',
+        'https://learn-earn-admin.vercel.app',
+        'https://learn-earn-admin-dawson-s-projects.vercel.app',
+        'https://your-mobile-app.com'
+      ]
     : true,
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Body parsing middleware
@@ -48,6 +56,7 @@ app.get('/health', (req: Request, res: Response) => {
 });
 
 // API routes
+app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/earnings', earningRoutes);
 app.use('/api/payouts', payoutRoutes);
