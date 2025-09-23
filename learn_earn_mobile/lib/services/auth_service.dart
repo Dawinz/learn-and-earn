@@ -53,7 +53,6 @@ class AuthService {
         body: jsonEncode(request.toJson()),
       );
 
-
       final data = jsonDecode(response.body);
       final authResponse = AuthResponse.fromJson(data);
 
@@ -81,7 +80,6 @@ class AuthService {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(request.toJson()),
       );
-
 
       final data = jsonDecode(response.body);
       final authResponse = AuthResponse.fromJson(data);
