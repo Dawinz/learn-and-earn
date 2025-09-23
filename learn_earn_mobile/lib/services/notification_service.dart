@@ -91,6 +91,9 @@ class NotificationService {
 
   // Initialize Firebase Cloud Messaging
   Future<void> _initializeFCM() async {
+    // Firebase temporarily disabled
+    return;
+    /*
     // Get FCM token
     _fcmToken = await _firebaseMessaging.getToken();
 
@@ -127,10 +130,15 @@ class NotificationService {
     if (initialMessage != null) {
       _handleNotificationTap(initialMessage);
     }
+    */
   }
 
   // Handle foreground messages
-  Future<void> _handleForegroundMessage(RemoteMessage message) async {
+  // ignore: unused_element
+  Future<void> _handleForegroundMessage(/*RemoteMessage message*/) async {
+    // Firebase temporarily disabled
+    return;
+    /*
     if (kDebugMode) {
       print('Received foreground message: ${message.messageId}');
     }
@@ -141,16 +149,22 @@ class NotificationService {
       message.notification?.body ?? 'You have a new message',
       message.data,
     );
+    */
   }
 
   // Handle notification taps
-  Future<void> _handleNotificationTap(RemoteMessage message) async {
+  // ignore: unused_element
+  Future<void> _handleNotificationTap(/*RemoteMessage message*/) async {
+    // Firebase temporarily disabled
+    return;
+    /*
     if (kDebugMode) {
       print('Notification tapped: ${message.messageId}');
     }
 
     // Handle navigation based on notification data
     _handleNotificationNavigation(message.data);
+    */
   }
 
   // Handle local notification taps
@@ -274,21 +288,30 @@ class NotificationService {
 
   // Subscribe to topic
   Future<void> subscribeToTopic(String topic) async {
+    // Firebase temporarily disabled
+    return;
+    /*
     await _firebaseMessaging.subscribeToTopic(topic);
     if (kDebugMode) {
       print('Subscribed to topic: $topic');
     }
+    */
   }
 
   // Unsubscribe from topic
   Future<void> unsubscribeFromTopic(String topic) async {
+    // Firebase temporarily disabled
+    return;
+    /*
     await _firebaseMessaging.unsubscribeFromTopic(topic);
     if (kDebugMode) {
       print('Unsubscribed from topic: $topic');
     }
+    */
   }
 
   // Save FCM token to preferences
+  // ignore: unused_element
   Future<void> _saveFCMToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('fcm_token', token);
@@ -320,10 +343,14 @@ class NotificationService {
 
 // Background message handler (must be top-level function)
 @pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+Future<void> _firebaseMessagingBackgroundHandler(/*RemoteMessage message*/) async {
+  // Firebase temporarily disabled
+  return;
+  /*
   await Firebase.initializeApp();
 
   if (kDebugMode) {
     print('Handling background message: ${message.messageId}');
   }
+  */
 }
