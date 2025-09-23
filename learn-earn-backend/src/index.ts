@@ -32,6 +32,7 @@ app.use(cors({
         'https://learn-earn-admin.vercel.app',
         'https://learn-earn-admin-dawson-s-projects.vercel.app',
         'https://learn-earn-admin-git-main-dawson-s-projects.vercel.app',
+        'https://learn-earn-admin-drs4a6sc6-dawson-s-projects.vercel.app',
         // Mobile app domains (add when deployed)
         'https://your-mobile-app.com',
         'https://learn-earn-mobile.vercel.app',
