@@ -174,15 +174,6 @@ class HelpSupportPage extends StatelessWidget {
                   ),
                   const Divider(height: 1),
                   _buildContactItem(
-                    'Phone Support',
-                    'Call us for immediate help',
-                    '+1 (555) 123-4567',
-                    Icons.phone,
-                    Colors.green,
-                    () => _openPhoneSupport(context),
-                  ),
-                  const Divider(height: 1),
-                  _buildContactItem(
                     'Live Chat',
                     'Chat with our support team',
                     'Available 24/7',
@@ -443,44 +434,50 @@ class HelpSupportPage extends StatelessWidget {
   }
 
   void _openEmailSupport(BuildContext context) {
-    ScaffoldMessenger.of(
+    _showHelpDialog(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Opening email client...')));
-  }
-
-  void _openPhoneSupport(BuildContext context) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Opening phone dialer...')));
+      'Email Support',
+      'For support inquiries, please email us at:\n\nsupport@learnearn.com\n\nWe typically respond within 24 hours.',
+    );
   }
 
   void _openLiveChat(BuildContext context) {
-    ScaffoldMessenger.of(
+    _showHelpDialog(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Opening live chat...')));
+      'Live Chat',
+      'Live chat support is currently being set up. For immediate assistance, please use email support or check our FAQ section.',
+    );
   }
 
   void _reportBug(BuildContext context) {
-    ScaffoldMessenger.of(
+    _showHelpDialog(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Opening bug report form...')));
+      'Report a Bug',
+      'To report a bug or issue:\n\n1. Go to your device settings\n2. Find "Learn & Earn" app\n3. Tap "Report a Problem"\n\nOr email us at: support@learnearn.com\n\nPlease include:\n• Device model\n• App version\n• Steps to reproduce the issue',
+    );
   }
 
   void _openForum(BuildContext context) {
-    ScaffoldMessenger.of(
+    _showHelpDialog(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Opening user forum...')));
+      'User Forum',
+      'Our community forum is coming soon! In the meantime, you can:\n\n• Check our FAQ section\n• Email us for support\n• Follow us on social media for updates',
+    );
   }
 
   void _openSocialMedia(BuildContext context) {
-    ScaffoldMessenger.of(
+    _showHelpDialog(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Opening social media...')));
+      'Social Media',
+      'Follow us for updates and tips:\n\n• Twitter: @learnearn_official\n• Instagram: @learnearn_official\n• Facebook: Learn & Earn App\n\nWe share learning tips, app updates, and success stories!',
+    );
   }
 
   void _sendFeedback(BuildContext context) {
-    ScaffoldMessenger.of(
+    _showHelpDialog(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Opening feedback form...')));
+      'Send Feedback',
+      'We\'d love to hear from you!\n\nTo send feedback:\n\n1. Email us at: feedback@learnearn.com\n2. Include your suggestions\n3. Tell us what you love about the app\n\nYour feedback helps us improve Learn & Earn for everyone!',
+    );
   }
 }
