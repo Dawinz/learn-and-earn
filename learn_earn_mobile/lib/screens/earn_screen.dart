@@ -258,54 +258,6 @@ class EarnScreen extends StatelessWidget {
                             ),
 
                             const SizedBox(height: 16),
-
-                            // Test Ad Button
-                            Card(
-                              elevation: 4,
-                              child: Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Column(
-                                  children: [
-                                    const Icon(
-                                      Icons.bug_report,
-                                      size: 40,
-                                      color: Colors.red,
-                                    ),
-                                    const SizedBox(height: 8),
-                                    const Text(
-                                      'Test Ad (Debug)',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    ElevatedButton(
-                                      onPressed: () async {
-                                        print('🧪 Testing ad display...');
-                                        final adShown = await appProvider
-                                            .watchAd();
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              adShown
-                                                  ? '✅ Ad shown successfully!'
-                                                  : '❌ Ad failed to show - check console logs',
-                                            ),
-                                            backgroundColor: adShown
-                                                ? Colors.green
-                                                : Colors.red,
-                                          ),
-                                        );
-                                      },
-                                      child: const Text('Test Ad Now'),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
                           ],
                         ),
                       ),

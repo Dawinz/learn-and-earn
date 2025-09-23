@@ -84,15 +84,21 @@ class AppProvider extends ChangeNotifier {
       try {
         // Register device with backend
         final deviceData = await ApiService.registerDevice();
-        print('Device registered: ${deviceData['deviceId']}');
+        if (kDebugMode) {
+          print('Device registered: ${deviceData['deviceId']}');
+        }
 
         // Load lessons from backend
         final backendLessons = await ApiService.getLessons();
         if (backendLessons.isNotEmpty) {
           _lessons = backendLessons;
-          print('Loaded ${backendLessons.length} lessons from backend');
+          if (kDebugMode) {
+            print('Loaded ${backendLessons.length} lessons from backend');
+          }
         } else {
-          print('No lessons from backend, using local data');
+          if (kDebugMode) {
+            print('No lessons from backend, using local data');
+          }
           _initializeData();
         }
 
@@ -100,13 +106,17 @@ class AppProvider extends ChangeNotifier {
         final backendEarnings = await ApiService.getEarningsHistory();
         if (backendEarnings.isNotEmpty) {
           _transactions = backendEarnings;
-          print('Loaded ${backendEarnings.length} transactions from backend');
+          if (kDebugMode) {
+            print('Loaded ${backendEarnings.length} transactions from backend');
+          }
         }
 
         // Load user profile from backend
         final userProfile = await ApiService.getUserProfile();
         if (userProfile.isNotEmpty) {
-          print('User profile loaded: $userProfile');
+          if (kDebugMode) {
+            print('User profile loaded: $userProfile');
+          }
         }
 
         // Calculate coins from transactions
@@ -1530,14 +1540,12 @@ YouTube is the world's second-largest search engine with over 2 billion logged-i
         addCoins(15, 'Ad Watched'); // 15 coins for rewarded video as per README
         return true;
       } else {
-        // If ad fails to show, still give coins (for testing)
-        addCoins(15, 'Ad Watched (Test)');
         return false;
       }
     } catch (e) {
-      print('Error showing ad: $e');
-      // Still give coins for testing
-      addCoins(15, 'Ad Watched (Test)');
+      if (kDebugMode) {
+        print('Error showing ad: $e');
+      }
       return false;
     }
   }

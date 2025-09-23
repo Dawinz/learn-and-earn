@@ -72,13 +72,6 @@ class _NotificationSettingsScreenState
     await NotificationService.instance.openAppSettings();
   }
 
-  Future<void> _testNotification() async {
-    await NotificationService.instance.sendLocalNotification(
-      title: 'Test Notification',
-      body: 'This is a test notification from Learn & Earn!',
-      data: {'type': 'test'},
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -174,24 +167,6 @@ class _NotificationSettingsScreenState
                     ),
 
                     const SizedBox(height: 30),
-
-                    // Test notification button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: _testNotification,
-                        icon: const Icon(Icons.notifications_active),
-                        label: const Text('Send Test Notification'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF4CAF50),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                    ),
 
                     const SizedBox(height: 16),
 

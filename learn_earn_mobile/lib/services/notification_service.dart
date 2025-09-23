@@ -343,7 +343,9 @@ class NotificationService {
 
 // Background message handler (must be top-level function)
 @pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(/*RemoteMessage message*/) async {
+Future<void> _firebaseMessagingBackgroundHandler(
+  /*RemoteMessage message*/
+) async {
   // Firebase temporarily disabled
   return;
   /*
