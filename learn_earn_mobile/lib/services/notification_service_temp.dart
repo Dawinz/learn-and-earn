@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
 import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest.dart' as tz;
 
 class NotificationService {
   static NotificationService? _instance;
@@ -24,6 +24,9 @@ class NotificationService {
     if (_isInitialized) return;
 
     try {
+      // Configure timezone
+      await _configureLocalTimeZone();
+
       // Initialize local notifications
       await _initializeLocalNotifications();
 
@@ -49,16 +52,16 @@ class NotificationService {
 
     const DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
+          requestAlertPermission: true,
+          requestBadgePermission: true,
+          requestSoundPermission: true,
+        );
 
     const InitializationSettings initializationSettings =
         InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsIOS,
-    );
+          android: initializationSettingsAndroid,
+          iOS: initializationSettingsIOS,
+        );
 
     await _localNotifications.initialize(
       initializationSettings,
@@ -99,19 +102,19 @@ class NotificationService {
   }) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-      'learn_earn_channel',
-      'Learn & Earn Notifications',
-      channelDescription: 'Notifications for Learn & Earn app',
-      importance: Importance.max,
-      priority: Priority.high,
-    );
+          'learn_earn_channel',
+          'Learn & Earn Notifications',
+          channelDescription: 'Notifications for Learn & Earn app',
+          importance: Importance.max,
+          priority: Priority.high,
+        );
 
     const DarwinNotificationDetails iOSPlatformChannelSpecifics =
         DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        );
 
     const NotificationDetails platformChannelSpecifics = NotificationDetails(
       android: androidPlatformChannelSpecifics,
@@ -181,8 +184,9 @@ class NotificationService {
 
   // Configure local timezone
   Future<void> _configureLocalTimeZone() async {
+    // Initialize timezones
     tz.initializeTimeZones();
-    final String timeZoneName = await _localNotifications.getTimeZoneName() ?? 'UTC';
-    tz.setLocalLocation(tz.getLocation(timeZoneName));
+    // Use system timezone as fallback
+    tz.setLocalLocation(tz.local);
   }
 }
