@@ -72,7 +72,6 @@ class _NotificationSettingsScreenState
     await NotificationService.instance.openAppSettings();
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

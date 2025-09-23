@@ -4,7 +4,7 @@ import '../models/lesson.dart';
 import '../models/transaction.dart';
 
 class ApiService {
-  static const String baseUrl = 'https://learn-earn-backend-1.onrender.com/api';
+  static const String baseUrl = 'https://learn-and-earn-04ok.onrender.com/api';
   static String? _deviceId;
 
   // Set device ID for API calls
@@ -399,7 +399,7 @@ class ApiService {
   static Future<bool> checkHealth() async {
     try {
       final response = await http.get(
-        Uri.parse('https://learn-earn-backend-1.onrender.com/health'),
+        Uri.parse('https://learn-and-earn-04ok.onrender.com/health'),
         headers: {'Content-Type': 'application/json'},
       );
       return response.statusCode == 200;

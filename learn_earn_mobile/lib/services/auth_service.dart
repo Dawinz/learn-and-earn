@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user.dart';
 
 class AuthService {
-  static const String baseUrl = 'https://learn-earn-backend-1.onrender.com/api';
+  static const String baseUrl = 'https://learn-and-earn-04ok.onrender.com/api';
   static const String _tokenKey = 'auth_token';
   static const String _userKey = 'user_data';
 
