@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
+// import 'package:firebase_core/firebase_core.dart';
+// import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,7 +13,7 @@ class NotificationService {
       _instance ??= NotificationService._();
   NotificationService._();
 
-  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+  // final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
@@ -30,7 +30,7 @@ class NotificationService {
 
     try {
       // Initialize Firebase if not already done
-      await Firebase.initializeApp();
+      // await Firebase.initializeApp();
 
       // Initialize local notifications
       await _initializeLocalNotifications();

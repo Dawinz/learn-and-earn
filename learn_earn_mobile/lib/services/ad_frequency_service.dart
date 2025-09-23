@@ -2,7 +2,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class AdFrequencyService {
   static AdFrequencyService? _instance;
-  static AdFrequencyService get instance => _instance ??= AdFrequencyService._();
+  static AdFrequencyService get instance =>
+      _instance ??= AdFrequencyService._();
   AdFrequencyService._();
 
   // Frequency limits (per hour)
@@ -20,8 +21,10 @@ class AdFrequencyService {
   Future<bool> canShowInterstitialAd() async {
     final prefs = await SharedPreferences.getInstance();
     final now = DateTime.now();
-    final lastReset = DateTime.parse(prefs.getString(_lastResetKey) ?? now.toIso8601String());
-    
+    final lastReset = DateTime.parse(
+      prefs.getString(_lastResetKey) ?? now.toIso8601String(),
+    );
+
     // Reset counters if it's been more than an hour
     if (now.difference(lastReset).inHours >= 1) {
       await _resetCounters();
@@ -36,8 +39,10 @@ class AdFrequencyService {
   Future<bool> canShowRewardedAd() async {
     final prefs = await SharedPreferences.getInstance();
     final now = DateTime.now();
-    final lastReset = DateTime.parse(prefs.getString(_lastResetKey) ?? now.toIso8601String());
-    
+    final lastReset = DateTime.parse(
+      prefs.getString(_lastResetKey) ?? now.toIso8601String(),
+    );
+
     // Reset counters if it's been more than an hour
     if (now.difference(lastReset).inHours >= 1) {
       await _resetCounters();
@@ -52,8 +57,10 @@ class AdFrequencyService {
   Future<bool> canRefreshBannerAd() async {
     final prefs = await SharedPreferences.getInstance();
     final now = DateTime.now();
-    final lastReset = DateTime.parse(prefs.getString(_lastResetKey) ?? now.toIso8601String());
-    
+    final lastReset = DateTime.parse(
+      prefs.getString(_lastResetKey) ?? now.toIso8601String(),
+    );
+
     // Reset counters if it's been more than an hour
     if (now.difference(lastReset).inHours >= 1) {
       await _resetCounters();
@@ -89,7 +96,7 @@ class AdFrequencyService {
   Future<void> _resetCounters() async {
     final prefs = await SharedPreferences.getInstance();
     final now = DateTime.now();
-    
+
     await prefs.setInt(_interstitialCountKey, 0);
     await prefs.setInt(_rewardedCountKey, 0);
     await prefs.setInt(_bannerRefreshCountKey, 0);
@@ -110,13 +117,15 @@ class AdFrequencyService {
   Future<Duration> getTimeUntilReset() async {
     final prefs = await SharedPreferences.getInstance();
     final now = DateTime.now();
-    final lastReset = DateTime.parse(prefs.getString(_lastResetKey) ?? now.toIso8601String());
+    final lastReset = DateTime.parse(
+      prefs.getString(_lastResetKey) ?? now.toIso8601String(),
+    );
     final nextReset = lastReset.add(const Duration(hours: 1));
-    
+
     if (now.isAfter(nextReset)) {
       return Duration.zero;
     }
-    
+
     return nextReset.difference(now);
   }
 }

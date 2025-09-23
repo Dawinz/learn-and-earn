@@ -486,9 +486,7 @@ class AboutPage extends StatelessWidget {
   void _showPrivacyPolicy(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const PrivacyPolicyScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const PrivacyPolicyScreen()),
     );
   }
 

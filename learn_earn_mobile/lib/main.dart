@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'widgets/auth_wrapper.dart';
 import 'providers/app_provider.dart';
 import 'services/ad_service.dart';
-import 'services/notification_service.dart';
+import 'services/notification_service_temp.dart';
 import 'services/connectivity_service.dart';
 import 'services/version_service.dart';
 import 'screens/login_screen.dart';
