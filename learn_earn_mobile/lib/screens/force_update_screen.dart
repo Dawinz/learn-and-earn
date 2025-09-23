@@ -39,7 +39,7 @@ class ForceUpdateScreen extends StatelessWidget {
               Text(
                 versionResult.maintenanceMode
                     ? 'Maintenance Mode'
-                    : versionResult.versionResult?.updateTitle ??
+                    : versionResult.versionInfo?.updateTitle ??
                           'Update Required',
                 style: const TextStyle(
                   fontSize: 28,
@@ -56,7 +56,7 @@ class ForceUpdateScreen extends StatelessWidget {
                 versionResult.maintenanceMode
                     ? versionResult.error ??
                           'The app is currently under maintenance. Please try again later.'
-                    : versionResult.versionResult?.updateMessage ??
+                    : versionResult.versionInfo?.updateMessage ??
                           'A new version is available with important updates.',
                 style: TextStyle(
                   fontSize: 16,
@@ -69,7 +69,7 @@ class ForceUpdateScreen extends StatelessWidget {
               const SizedBox(height: 32),
 
               // Version Info
-              if (versionResult.versionResult != null) ...[
+              if (versionResult.versionInfo != null) ...[
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -86,7 +86,7 @@ class ForceUpdateScreen extends StatelessWidget {
                       const SizedBox(height: 8),
                       _buildVersionRow(
                         'Latest Version',
-                        '${versionResult.versionResult!.latestVersion} (${versionResult.versionResult!.latestBuildNumber})',
+                        '${versionResult.versionInfo!.latestVersion} (${versionResult.versionInfo!.latestBuildNumber})',
                       ),
                     ],
                   ),
