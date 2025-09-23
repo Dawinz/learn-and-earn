@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'widgets/auth_wrapper.dart';
 import 'providers/app_provider.dart';
 import 'services/ad_service.dart';
+import 'services/notification_service.dart';
+import 'services/connectivity_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/signup_screen.dart';
 import 'screens/main_navigation.dart';
@@ -11,7 +13,13 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize AdMob
-  await AdService.initialize();
+  await AdService.instance.initialize();
+
+  // Initialize Notifications
+  await NotificationService.instance.initialize();
+
+  // Initialize Connectivity Service
+  await ConnectivityService().initialize();
 
   runApp(const LearnEarnApp());
 }

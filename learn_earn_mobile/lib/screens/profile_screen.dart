@@ -8,6 +8,7 @@ import 'settings_page.dart';
 import 'help_support_page.dart';
 import 'about_page.dart';
 import 'leaderboard_screen.dart';
+import 'notification_settings_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -271,6 +272,18 @@ class ProfileScreen extends StatelessWidget {
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => const SettingsPage(),
+                                ),
+                              ),
+                            ),
+                            _buildProfileOption(
+                              icon: Icons.notifications,
+                              title: 'Notifications',
+                              subtitle: 'Manage notification preferences',
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const NotificationSettingsScreen(),
                                 ),
                               ),
                             ),

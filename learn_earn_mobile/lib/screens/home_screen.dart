@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
 import '../services/ad_service.dart';
 import '../constants/app_constants.dart';
+import '../widgets/banner_ad_widget.dart';
 import 'learn_screen.dart';
 import 'earn_screen.dart';
 import 'quiz_screen.dart';
@@ -290,6 +291,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         }
                         return const SizedBox.shrink();
                       },
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Banner Ad
+                    const BannerAdWidget(
+                      height: 60,
+                      margin: EdgeInsets.symmetric(vertical: 8.0),
                     ),
 
                     const SizedBox(height: 16),

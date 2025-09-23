@@ -263,6 +263,22 @@ export async function saveLesson(req: any, res: Response) {
 }
 
 /**
+ * Get settings
+ */
+export async function getSettings(req: any, res: Response) {
+  try {
+    const settings = await Settings.findOne();
+    if (!settings) {
+      return res.status(404).json({ error: 'Settings not found' });
+    }
+    
+    res.json({ settings });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get settings' });
+  }
+}
+
+/**
  * Update settings
  */
 export async function updateSettings(req: any, res: Response) {

@@ -4,6 +4,7 @@ import {
   getDashboard,
   getPayoutQueue,
   updatePayoutStatus,
+  getSettings,
   updateSettings,
   getAuditLogs,
   getUsers,
@@ -33,6 +34,7 @@ router.get('/lessons', getAdminLessons);
 router.post('/lessons', createLesson);
 router.put('/lessons/:lessonId', updateLesson);
 router.delete('/lessons/:lessonId', deleteLesson);
+router.get('/settings', getSettings);
 router.put('/settings', updateSettings);
 router.get('/audits', getAuditLogs);
 router.get('/users', getUsers);

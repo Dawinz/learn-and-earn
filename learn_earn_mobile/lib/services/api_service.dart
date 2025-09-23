@@ -16,7 +16,7 @@ class ApiService {
   static Future<Map<String, dynamic>> registerDevice() async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/device/register'),
+        Uri.parse('$baseUrl/users/register'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'timestamp': DateTime.now().toIso8601String()}),
       );

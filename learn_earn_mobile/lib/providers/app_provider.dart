@@ -6,6 +6,7 @@ import '../services/storage_service.dart';
 import '../services/ad_service.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
+import '../services/connectivity_service.dart';
 import '../constants/app_constants.dart';
 
 class AppProvider extends ChangeNotifier {
@@ -15,6 +16,7 @@ class AppProvider extends ChangeNotifier {
   DateTime? _lastResetDate;
   User? _user;
   bool _isAuthenticated = false;
+  bool _isOnline = true;
 
   // Getters
   int get coins => _coins;
@@ -22,12 +24,16 @@ class AppProvider extends ChangeNotifier {
   List<Transaction> get transactions => _transactions;
   User? get user => _user;
   bool get isAuthenticated => _isAuthenticated;
+  bool get isOnline => _isOnline;
 
   AppProvider() {
     _initializeData();
   }
 
   Future<void> initialize() async {
+    // Initialize connectivity service
+    await ConnectivityService().initialize();
+
     // Check authentication status first
     await _checkAuthStatus();
     await _loadData();
@@ -53,6 +59,12 @@ class AppProvider extends ChangeNotifier {
   Future<void> setUser(User user) async {
     _user = user;
     _isAuthenticated = true;
+    notifyListeners();
+  }
+
+  // Update connectivity status
+  void updateConnectivityStatus(bool isOnline) {
+    _isOnline = isOnline;
     notifyListeners();
   }
 
@@ -1487,7 +1499,10 @@ YouTube is the world's second-largest search engine with over 2 billion logged-i
     if (index != -1 && !_lessons[index].isCompleted) {
       // Update local state first
       _lessons[index] = _lessons[index].copyWith(isCompleted: true);
-      addCoins(_lessons[index].coinReward, 'Lesson Completed');
+      addCoins(
+        15,
+        'Lesson Completed',
+      ); // 15 coins for lesson completion as per README
 
       // Sync with backend
       try {
@@ -1510,19 +1525,19 @@ YouTube is the world's second-largest search engine with over 2 billion logged-i
 
   Future<bool> watchAd() async {
     try {
-      final adShown = await AdService.showRewardedAd();
-      if (adShown) {
-        addCoins(10, 'Ad Watched');
+      final reward = await AdService.instance.showRewardedAd();
+      if (reward != null) {
+        addCoins(15, 'Ad Watched'); // 15 coins for rewarded video as per README
         return true;
       } else {
         // If ad fails to show, still give coins (for testing)
-        addCoins(10, 'Ad Watched (Test)');
+        addCoins(15, 'Ad Watched (Test)');
         return false;
       }
     } catch (e) {
       print('Error showing ad: $e');
       // Still give coins for testing
-      addCoins(10, 'Ad Watched (Test)');
+      addCoins(15, 'Ad Watched (Test)');
       return false;
     }
   }
@@ -1530,9 +1545,9 @@ YouTube is the world's second-largest search engine with over 2 billion logged-i
   // Show ad when starting a lesson
   Future<bool> showLessonAd() async {
     try {
-      final adShown = await AdService.showRewardedAd();
-      if (adShown) {
-        addCoins(5, 'Lesson Ad Bonus');
+      final reward = await AdService.instance.showRewardedAd();
+      if (reward != null) {
+        addCoins(10, 'Lesson Ad Bonus'); // 10 coins for lesson ad bonus
         return true;
       }
       return false;
@@ -1545,9 +1560,12 @@ YouTube is the world's second-largest search engine with over 2 billion logged-i
   // Show ad on daily login
   Future<bool> showDailyLoginAd() async {
     try {
-      final adShown = await AdService.showRewardedAd();
-      if (adShown) {
-        addCoins(10, 'Daily Login Ad Bonus');
+      final reward = await AdService.instance.showRewardedAd();
+      if (reward != null) {
+        addCoins(
+          10,
+          'Daily Login Ad Bonus',
+        ); // 10 coins for daily login ad bonus
         return true;
       }
       return false;
@@ -1560,9 +1578,9 @@ YouTube is the world's second-largest search engine with over 2 billion logged-i
   // Show ad when navigating between screens
   Future<bool> showNavigationAd() async {
     try {
-      final adShown = await AdService.showInterstitialAd();
+      final adShown = await AdService.instance.showInterstitialAd();
       if (adShown) {
-        addCoins(2, 'Navigation Ad Bonus');
+        addCoins(5, 'Navigation Ad Bonus'); // 5 coins for navigation ad bonus
       }
       return adShown;
     } catch (e) {
@@ -1574,11 +1592,15 @@ YouTube is the world's second-largest search engine with over 2 billion logged-i
   // Show ad when completing daily challenge
   Future<bool> showDailyChallengeAd() async {
     try {
-      final adShown = await AdService.showRewardedAd();
-      if (adShown) {
-        addCoins(10, 'Daily Challenge Ad Bonus');
+      final reward = await AdService.instance.showRewardedAd();
+      if (reward != null) {
+        addCoins(
+          15,
+          'Daily Challenge Ad Bonus',
+        ); // 15 coins for daily challenge ad bonus
+        return true;
       }
-      return adShown;
+      return false;
     } catch (e) {
       print('Error showing daily challenge ad: $e');
       return false;
@@ -1588,9 +1610,9 @@ YouTube is the world's second-largest search engine with over 2 billion logged-i
   // Show ad when viewing profile
   Future<bool> showProfileAd() async {
     try {
-      final adShown = await AdService.showInterstitialAd();
+      final adShown = await AdService.instance.showInterstitialAd();
       if (adShown) {
-        addCoins(3, 'Profile Ad Bonus');
+        addCoins(5, 'Profile Ad Bonus'); // 5 coins for profile ad bonus
       }
       return adShown;
     } catch (e) {
@@ -1602,9 +1624,9 @@ YouTube is the world's second-largest search engine with over 2 billion logged-i
   // Show ad before quiz
   Future<bool> showQuizAd() async {
     try {
-      final adShown = await AdService.showRewardedAd();
-      if (adShown) {
-        addCoins(5, 'Quiz Ad Bonus');
+      final reward = await AdService.instance.showRewardedAd();
+      if (reward != null) {
+        addCoins(10, 'Quiz Ad Bonus'); // 10 coins for quiz ad bonus
         return true;
       }
       return false;
@@ -1617,9 +1639,12 @@ YouTube is the world's second-largest search engine with over 2 billion logged-i
   // Show ad when requesting payout
   Future<bool> showPayoutAd() async {
     try {
-      final adShown = await AdService.showRewardedAd();
-      if (adShown) {
-        addCoins(15, 'Payout Ad Bonus');
+      final reward = await AdService.instance.showRewardedAd();
+      if (reward != null) {
+        addCoins(
+          20,
+          'Payout Ad Bonus',
+        ); // 20 coins for payout ad bonus (higher value for payout)
         return true;
       }
       return false;
@@ -1636,11 +1661,14 @@ YouTube is the world's second-largest search engine with over 2 billion logged-i
   }
 
   void dailyLogin() {
-    addCoins(5, 'Daily Login');
+    addCoins(5, 'Daily Login'); // 5 coins for daily login as per README
   }
 
   void completeQuiz() {
-    addCoins(20, 'Quiz Completed');
+    addCoins(
+      20,
+      'Quiz Completed',
+    ); // 20 coins for quiz completion as per README
   }
 
   // Request payout
@@ -1752,7 +1780,10 @@ YouTube is the world's second-largest search engine with over 2 billion logged-i
           }
 
           // Add daily reset bonus
-          addCoins(50, 'Daily Reset Bonus');
+          addCoins(
+            5,
+            'Daily Reset Bonus',
+          ); // 5 coins for daily reset bonus as per README
 
           // Update local reset date
           final today = DateTime.now();
@@ -1791,7 +1822,10 @@ YouTube is the world's second-largest search engine with over 2 billion logged-i
     }
 
     // Add daily reset bonus
-    addCoins(50, 'Daily Reset Bonus');
+    addCoins(
+      5,
+      'Daily Reset Bonus',
+    ); // 5 coins for daily reset bonus as per README
 
     // Update local reset date
     final today = DateTime.now();

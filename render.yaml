@@ -4,8 +4,10 @@ services:
     env: node
     region: oregon
     plan: free
-    buildCommand: cd learn-earn-backend && npm ci && npm run build
-    startCommand: cd learn-earn-backend && npm start
+    repo: https://github.com/Dawinz/learn-and-earn
+    rootDir: learn-earn-backend
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
@@ -38,6 +40,10 @@ services:
         generateValue: true
       - key: JWT_SECRET
         generateValue: true
+      - key: ECPM_USD
+        value: "1.5"
+      - key: COIN_TO_USD_RATE
+        value: "0.001"
 
 databases:
   - name: learn-earn-db
