@@ -53,29 +53,6 @@ class AuthService {
         body: jsonEncode(request.toJson()),
       );
 
-      if (response.statusCode == 404) {
-        // Backend doesn't have auth routes yet, create a mock user
-        final mockUser = User(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          email: request.email,
-          name: request.name,
-          phoneNumber: request.phoneNumber,
-          createdAt: DateTime.now(),
-          isEmailVerified: false,
-        );
-
-        await storeAuthData(
-          'mock_token_${DateTime.now().millisecondsSinceEpoch}',
-          mockUser,
-        );
-
-        return AuthResponse(
-          success: true,
-          message: 'Account created successfully (offline mode)',
-          user: mockUser,
-          token: 'mock_token_${DateTime.now().millisecondsSinceEpoch}',
-        );
-      }
 
       final data = jsonDecode(response.body);
       final authResponse = AuthResponse.fromJson(data);
@@ -105,23 +82,6 @@ class AuthService {
         body: jsonEncode(request.toJson()),
       );
 
-      if (response.statusCode == 404) {
-        // Backend doesn't have auth routes yet, check if user exists locally
-        final storedUser = await getStoredUser();
-        if (storedUser != null && storedUser.email == request.email) {
-          return AuthResponse(
-            success: true,
-            message: 'Login successful (offline mode)',
-            user: storedUser,
-            token: 'mock_token_${DateTime.now().millisecondsSinceEpoch}',
-          );
-        } else {
-          return AuthResponse(
-            success: false,
-            message: 'User not found. Please sign up first.',
-          );
-        }
-      }
 
       final data = jsonDecode(response.body);
       final authResponse = AuthResponse.fromJson(data);
