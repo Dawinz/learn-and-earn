@@ -19,7 +19,7 @@ void main() async {
 
   // Check for updates
   final versionResult = await VersionService.instance.checkForUpdates();
-  
+
   // If maintenance mode or force update required, show update screen
   if (versionResult.maintenanceMode || versionResult.forceUpdate) {
     runApp(ForceUpdateApp(versionResult: versionResult));
@@ -37,19 +37,14 @@ void main() async {
 class ForceUpdateApp extends StatelessWidget {
   final VersionCheckResult versionResult;
 
-  const ForceUpdateApp({
-    Key? key,
-    required this.versionResult,
-  }) : super(key: key);
+  const ForceUpdateApp({Key? key, required this.versionResult})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Learn & Earn',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-      ),
+      theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
       home: ForceUpdateScreen(versionResult: versionResult),
       debugShowCheckedModeBanner: false,
     );

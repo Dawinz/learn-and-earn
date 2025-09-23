@@ -76,7 +76,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
     }
 
     return Container(
-      height: widget.height ?? 50,
+      height: (widget.height ?? 50) + 20, // Extra space for label
       margin: widget.margin ?? const EdgeInsets.all(8.0),
       decoration: BoxDecoration(
         color: widget.backgroundColor ?? Colors.white,
@@ -89,9 +89,40 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: AdWidget(ad: _bannerAd!),
+      child: Column(
+        children: [
+          // Ad Label
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(8),
+                topRight: Radius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Advertisement',
+              style: TextStyle(
+                fontSize: 10,
+                color: Colors.grey,
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          // Ad Content
+          Expanded(
+            child: ClipRRect(
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(8),
+                bottomRight: Radius.circular(8),
+              ),
+              child: AdWidget(ad: _bannerAd!),
+            ),
+          ),
+        ],
       ),
     );
   }

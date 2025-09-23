@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'privacy_policy_screen.dart';
 
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
@@ -483,21 +484,10 @@ class AboutPage extends StatelessWidget {
   }
 
   void _showPrivacyPolicy(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Privacy Policy'),
-        content: const SingleChildScrollView(
-          child: Text(
-            'Privacy Policy content would go here. This includes information about how we collect, use, and protect your personal data.',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const PrivacyPolicyScreen(),
       ),
     );
   }

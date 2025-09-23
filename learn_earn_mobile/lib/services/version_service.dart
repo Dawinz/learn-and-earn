@@ -45,7 +45,8 @@ class VersionInfo {
       androidDownloadUrl: json['androidDownloadUrl'] ?? '',
       iosDownloadUrl: json['iosDownloadUrl'] ?? '',
       maintenanceMode: json['maintenanceMode'] ?? false,
-      maintenanceMessage: json['maintenanceMessage'] ?? 'App is under maintenance.',
+      maintenanceMessage:
+          json['maintenanceMessage'] ?? 'App is under maintenance.',
       features: json['features'] ?? {},
     );
   }
@@ -56,8 +57,9 @@ class VersionService {
   static VersionService get instance => _instance ??= VersionService._();
   VersionService._();
 
-  static const String _baseUrl = 'https://learn-and-earn-04ok.onrender.com/api/version';
-  
+  static const String _baseUrl =
+      'https://learn-and-earn-04ok.onrender.com/api/version';
+
   PackageInfo? _packageInfo;
   VersionInfo? _versionInfo;
 
@@ -78,15 +80,18 @@ class VersionService {
 
   // Get current app version
   String get currentVersion => _packageInfo?.version ?? '1.0.0';
-  int get currentBuildNumber => int.tryParse(_packageInfo?.buildNumber ?? '1') ?? 1;
+  int get currentBuildNumber =>
+      int.tryParse(_packageInfo?.buildNumber ?? '1') ?? 1;
 
   // Check for updates
   Future<VersionCheckResult> checkForUpdates() async {
     try {
-      final response = await http.get(
-        Uri.parse(_baseUrl),
-        headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(
+            Uri.parse(_baseUrl),
+            headers: {'Content-Type': 'application/json'},
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -95,7 +100,7 @@ class VersionService {
           return _analyzeVersion();
         }
       }
-      
+
       return VersionCheckResult(
         needsUpdate: false,
         forceUpdate: false,
@@ -158,8 +163,9 @@ class VersionService {
     final minimumBuild = _versionInfo!.minimumBuildNumber;
 
     // Simple version comparison (you might want to use a proper version comparison library)
-    final needsUpdate = _compareVersions(currentVersion, minimumVersion) < 0 || 
-                       currentBuild < minimumBuild;
+    final needsUpdate =
+        _compareVersions(currentVersion, minimumVersion) < 0 ||
+        currentBuild < minimumBuild;
 
     return VersionCheckResult(
       needsUpdate: needsUpdate,
@@ -174,28 +180,28 @@ class VersionService {
   int _compareVersions(String version1, String version2) {
     final v1Parts = version1.split('.').map(int.parse).toList();
     final v2Parts = version2.split('.').map(int.parse).toList();
-    
+
     for (int i = 0; i < 3; i++) {
       final v1Part = i < v1Parts.length ? v1Parts[i] : 0;
       final v2Part = i < v2Parts.length ? v2Parts[i] : 0;
-      
+
       if (v1Part < v2Part) return -1;
       if (v1Part > v2Part) return 1;
     }
-    
+
     return 0;
   }
 
   // Get download URL for current platform
   String getDownloadUrl() {
     if (_versionInfo == null) return '';
-    
+
     if (Platform.isAndroid) {
       return _versionInfo!.androidDownloadUrl;
     } else if (Platform.isIOS) {
       return _versionInfo!.iosDownloadUrl;
     }
-    
+
     return '';
   }
 

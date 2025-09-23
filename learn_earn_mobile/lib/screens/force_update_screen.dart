@@ -5,10 +5,8 @@ import '../services/version_service.dart';
 class ForceUpdateScreen extends StatelessWidget {
   final VersionCheckResult versionResult;
 
-  const ForceUpdateScreen({
-    Key? key,
-    required this.versionResult,
-  }) : super(key: key);
+  const ForceUpdateScreen({Key? key, required this.versionResult})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -34,14 +32,15 @@ class ForceUpdateScreen extends StatelessWidget {
                   color: Colors.blue.shade600,
                 ),
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               // Title
               Text(
-                versionResult.maintenanceMode 
+                versionResult.maintenanceMode
                     ? 'Maintenance Mode'
-                    : versionResult.versionResult?.updateTitle ?? 'Update Required',
+                    : versionResult.versionResult?.updateTitle ??
+                          'Update Required',
                 style: const TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
@@ -49,14 +48,16 @@ class ForceUpdateScreen extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Message
               Text(
                 versionResult.maintenanceMode
-                    ? versionResult.error ?? 'The app is currently under maintenance. Please try again later.'
-                    : versionResult.versionResult?.updateMessage ?? 'A new version is available with important updates.',
+                    ? versionResult.error ??
+                          'The app is currently under maintenance. Please try again later.'
+                    : versionResult.versionResult?.updateMessage ??
+                          'A new version is available with important updates.',
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.grey.shade600,
@@ -64,9 +65,9 @@ class ForceUpdateScreen extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               // Version Info
               if (versionResult.versionResult != null) ...[
                 Container(
@@ -92,7 +93,7 @@ class ForceUpdateScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 32),
               ],
-              
+
               // Update Button
               if (!versionResult.maintenanceMode) ...[
                 SizedBox(
@@ -117,9 +118,9 @@ class ForceUpdateScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Retry Button (for non-force updates)
                 if (!versionResult.forceUpdate) ...[
                   TextButton(
@@ -134,7 +135,7 @@ class ForceUpdateScreen extends StatelessWidget {
                   ),
                 ],
               ],
-              
+
               // Maintenance Mode Message
               if (versionResult.maintenanceMode) ...[
                 Container(
@@ -178,10 +179,7 @@ class ForceUpdateScreen extends StatelessWidget {
       children: [
         Text(
           label,
-          style: TextStyle(
-            color: Colors.grey.shade600,
-            fontSize: 14,
-          ),
+          style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
         ),
         Text(
           value,
@@ -197,7 +195,7 @@ class ForceUpdateScreen extends StatelessWidget {
 
   void _handleUpdate() async {
     final downloadUrl = VersionService.instance.getDownloadUrl();
-    
+
     if (downloadUrl.isNotEmpty) {
       try {
         final uri = Uri.parse(downloadUrl);
@@ -206,7 +204,7 @@ class ForceUpdateScreen extends StatelessWidget {
         } else {
           // Fallback to Play Store search
           final playStoreUri = Uri.parse(
-            'https://play.google.com/store/apps/details?id=com.example.learn_earn_mobile'
+            'https://play.google.com/store/apps/details?id=com.example.learn_earn_mobile',
           );
           if (await canLaunchUrl(playStoreUri)) {
             await launchUrl(playStoreUri, mode: LaunchMode.externalApplication);

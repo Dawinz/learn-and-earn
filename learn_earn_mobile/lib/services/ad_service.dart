@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter/foundation.dart';
 import '../widgets/banner_ad_widget.dart';
+import 'ad_frequency_service.dart';
 
 class AdService {
   static AdService? _instance;
@@ -138,6 +139,15 @@ class AdService {
 
   // Show Interstitial Ad
   Future<bool> showInterstitialAd() async {
+    // Check frequency capping
+    final canShow = await AdFrequencyService.instance.canShowInterstitialAd();
+    if (!canShow) {
+      if (kDebugMode) {
+        print('Interstitial ad frequency limit reached');
+      }
+      return false;
+    }
+
     if (!_isInterstitialAdReady || _interstitialAd == null) {
       if (kDebugMode) {
         print('Interstitial ad not ready');
@@ -147,6 +157,8 @@ class AdService {
 
     try {
       await _interstitialAd!.show();
+      // Record that ad was shown
+      await AdFrequencyService.instance.recordInterstitialAdShown();
       return true;
     } catch (e) {
       if (kDebugMode) {
@@ -206,6 +218,15 @@ class AdService {
 
   // Show Rewarded Ad
   Future<RewardItem?> showRewardedAd() async {
+    // Check frequency capping
+    final canShow = await AdFrequencyService.instance.canShowRewardedAd();
+    if (!canShow) {
+      if (kDebugMode) {
+        print('Rewarded ad frequency limit reached');
+      }
+      return null;
+    }
+
     if (!_isRewardedAdReady || _rewardedAd == null) {
       if (kDebugMode) {
         print('Rewarded ad not ready');
@@ -225,6 +246,8 @@ class AdService {
           }
         },
       );
+      // Record that ad was shown
+      await AdFrequencyService.instance.recordRewardedAdShown();
       return reward;
     } catch (e) {
       if (kDebugMode) {
