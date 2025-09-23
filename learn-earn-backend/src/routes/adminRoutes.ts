@@ -9,7 +9,8 @@ import {
   getAuditLogs,
   getUsers,
   blockUser,
-  unblockUser
+  unblockUser,
+  getAnalytics
 } from '../controllers/adminController';
 import { 
   getAdminLessons,
@@ -40,5 +41,6 @@ router.get('/audits', getAuditLogs);
 router.get('/users', getUsers);
 router.put('/users/:userId/block', blockUser);
 router.put('/users/:userId/unblock', unblockUser);
+router.get('/analytics', getAnalytics);
 
 export default router;

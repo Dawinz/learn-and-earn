@@ -471,3 +471,46 @@ export async function unblockUser(req: any, res: Response) {
     res.status(500).json({ error: 'Failed to unblock user' });
   }
 }
+
+/**
+ * Get analytics data
+ */
+export async function getAnalytics(req: any, res: Response) {
+  try {
+    const totalUsers = await User.countDocuments();
+    const activeUsers = await User.countDocuments({ status: 'active' });
+    const blockedUsers = await User.countDocuments({ status: 'blocked' });
+    
+    const totalEarnings = await Earning.aggregate([
+      { $group: { _id: null, total: { $sum: '$amountUsd' } } }
+    ]);
+    
+    const totalPayouts = await Payout.aggregate([
+      { $group: { _id: null, total: { $sum: '$amountUsd' } } }
+    ]);
+    
+    const recentEarnings = await Earning.find()
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .populate('userId', 'deviceId')
+      .select('amountUsd source createdAt');
+    
+    const recentPayouts = await Payout.find()
+      .sort({ requestedAt: -1 })
+      .limit(10)
+      .select('amountUsd status requestedAt paidAt');
+    
+    res.json({
+      totalUsers,
+      activeUsers,
+      blockedUsers,
+      totalEarningsUsd: totalEarnings[0]?.total || 0,
+      totalPayoutsUsd: totalPayouts[0]?.total || 0,
+      recentEarnings,
+      recentPayouts
+    });
+  } catch (error) {
+    console.error('Analytics error:', error);
+    res.status(500).json({ error: 'Failed to get analytics' });
+  }
+}
