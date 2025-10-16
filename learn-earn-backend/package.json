@@ -10,6 +10,7 @@
     "postinstall": "tsc",
     "seed": "ts-node src/scripts/seed.ts",
     "seed:admob": "ts-node src/scripts/seedAdMob.ts",
+    "create:admin": "ts-node src/scripts/createAdmin.ts",
     "test:quiz": "ts-node src/scripts/testQuiz.ts",
     "test:cooldown": "ts-node src/scripts/testCooldown.ts",
     "test:daily-earning": "ts-node src/scripts/testDailyEarning.ts",

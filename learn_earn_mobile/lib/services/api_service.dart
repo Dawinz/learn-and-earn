@@ -69,7 +69,7 @@ class ApiService {
   static Future<bool> recordEarning(String source, int amount) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/earnings'),
+        Uri.parse('$baseUrl/earnings/record'),
         headers: {
           'Content-Type': 'application/json',
           if (_deviceId != null) 'X-Device-ID': _deviceId!,
@@ -92,7 +92,7 @@ class ApiService {
   static Future<List<Transaction>> getEarningsHistory() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/earnings'),
+        Uri.parse('$baseUrl/earnings/history'),
         headers: {
           'Content-Type': 'application/json',
           if (_deviceId != null) 'X-Device-ID': _deviceId!,
@@ -150,7 +150,7 @@ class ApiService {
   static Future<List<Map<String, dynamic>>> getPayoutHistory() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/payouts'),
+        Uri.parse('$baseUrl/payouts/history'),
         headers: {
           'Content-Type': 'application/json',
           if (_deviceId != null) 'X-Device-ID': _deviceId!,
@@ -399,7 +399,7 @@ class ApiService {
   static Future<bool> checkHealth() async {
     try {
       final response = await http.get(
-        Uri.parse('https://learn-and-earn-04ok.onrender.com/health'),
+        Uri.parse('$baseUrl/../health'), // Go up one level from /api to root
         headers: {'Content-Type': 'application/json'},
       );
       return response.statusCode == 200;

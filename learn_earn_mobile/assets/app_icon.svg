@@ -1,0 +1,64 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2196F3;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1976D2;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="coinGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FFA000;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="512" cy="512" r="512" fill="url(#bgGradient)"/>
+  
+  <!-- Book/Education icon -->
+  <g transform="translate(200, 300)">
+    <!-- Book base -->
+    <rect x="0" y="80" width="200" height="280" rx="20" fill="white" opacity="0.9"/>
+    <rect x="20" y="100" width="160" height="240" rx="10" fill="url(#bgGradient)" opacity="0.1"/>
+    
+    <!-- Book pages -->
+    <rect x="30" y="120" width="140" height="8" rx="4" fill="#2196F3" opacity="0.7"/>
+    <rect x="30" y="140" width="120" height="8" rx="4" fill="#2196F3" opacity="0.5"/>
+    <rect x="30" y="160" width="130" height="8" rx="4" fill="#2196F3" opacity="0.6"/>
+    <rect x="30" y="180" width="110" height="8" rx="4" fill="#2196F3" opacity="0.4"/>
+    <rect x="30" y="200" width="125" height="8" rx="4" fill="#2196F3" opacity="0.5"/>
+    <rect x="30" y="220" width="115" height="8" rx="4" fill="#2196F3" opacity="0.4"/>
+    <rect x="30" y="240" width="135" height="8" rx="4" fill="#2196F3" opacity="0.6"/>
+    <rect x="30" y="260" width="105" height="8" rx="4" fill="#2196F3" opacity="0.3"/>
+    <rect x="30" y="280" width="120" height="8" rx="4" fill="#2196F3" opacity="0.5"/>
+    <rect x="30" y="300" width="130" height="8" rx="4" fill="#2196F3" opacity="0.6"/>
+    <rect x="30" y="320" width="100" height="8" rx="4" fill="#2196F3" opacity="0.3"/>
+    <rect x="30" y="340" width="125" height="8" rx="4" fill="#2196F3" opacity="0.5"/>
+  </g>
+  
+  <!-- Coin/Money icon -->
+  <g transform="translate(600, 200)">
+    <!-- Coin -->
+    <circle cx="100" cy="100" r="80" fill="url(#coinGradient)"/>
+    <circle cx="100" cy="100" r="70" fill="none" stroke="#FFA000" stroke-width="3"/>
+    
+    <!-- Dollar sign -->
+    <text x="100" y="120" font-family="Arial, sans-serif" font-size="60" font-weight="bold" text-anchor="middle" fill="#FFA000">$</text>
+    
+    <!-- Coin shine effect -->
+    <ellipse cx="80" cy="60" rx="25" ry="15" fill="white" opacity="0.3"/>
+  </g>
+  
+  <!-- Plus sign connecting learn and earn -->
+  <g transform="translate(480, 480)">
+    <circle cx="32" cy="32" r="40" fill="white" opacity="0.9"/>
+    <rect x="20" y="28" width="24" height="8" rx="4" fill="#2196F3"/>
+    <rect x="28" y="20" width="8" height="24" rx="4" fill="#2196F3"/>
+  </g>
+  
+  <!-- Small decorative elements -->
+  <circle cx="150" cy="150" r="8" fill="white" opacity="0.6"/>
+  <circle cx="850" cy="200" r="6" fill="white" opacity="0.5"/>
+  <circle cx="200" cy="800" r="10" fill="white" opacity="0.4"/>
+  <circle cx="800" cy="750" r="7" fill="white" opacity="0.5"/>
+</svg>
+
