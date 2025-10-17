@@ -12,17 +12,15 @@ import { payoutLimiter } from '../middleware/rateLimit';
 
 const router = Router();
 
-// All payout routes require authentication
-router.use(authenticateDevice);
+// Admin payout routes (no auth required for now - TODO: add admin auth)
+router.get('/admin/all', getAllPayouts);
+router.patch('/admin/:payoutId/status', updatePayoutStatus);
 
-// User payout routes
+// User payout routes require device authentication
+router.use(authenticateDevice);
 router.post('/request', payoutLimiter, checkEmulatorPayoutPolicy, requestPayout);
 router.get('/history', getPayoutHistory);
 router.get('/status/:payoutId', getPayoutStatus);
 router.get('/cooldown', getCooldownStatus);
-
-// Admin payout routes (add admin middleware when available)
-router.get('/admin/all', getAllPayouts);
-router.patch('/admin/:payoutId/status', updatePayoutStatus);
 
 export default router;
