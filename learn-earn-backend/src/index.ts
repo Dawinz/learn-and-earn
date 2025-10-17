@@ -37,38 +37,24 @@ app.use(helmet({
     },
   },
 }));
+// NOTE: CORS set to allow all origins for testing
+// TODO: Restrict origins in production
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? [
-        'https://learn-earn-admin-otyulpxc5-dawson-s-projects.vercel.app',
-        'https://learn-earn-admin.vercel.app',
-        'https://learn-earn-admin-dawson-s-projects.vercel.app',
-        'https://learn-earn-admin-git-main-dawson-s-projects.vercel.app',
-        'https://learn-earn-admin-drs4a6sc6-dawson-s-projects.vercel.app',
-        // Mobile app domains (add when deployed)
-        'https://your-mobile-app.com',
-        'https://learn-earn-mobile.vercel.app',
-        // Local development
-        'http://localhost:3000',
-        'http://localhost:8080',
-        'http://localhost:3001',
-        'http://localhost:5173',
-        'http://127.0.0.1:3000',
-        'http://127.0.0.1:8080',
-        'http://127.0.0.1:3001',
-        'http://127.0.0.1:5173'
-      ]
-    : true,
+  origin: true, // Allow all origins for testing
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: [
-    'Content-Type', 
-    'Authorization', 
+    'Content-Type',
+    'Authorization',
     'X-Requested-With',
     'Accept',
     'Origin',
     'Access-Control-Request-Method',
-    'Access-Control-Request-Headers'
+    'Access-Control-Request-Headers',
+    'X-Device-ID',
+    'X-Signature',
+    'X-Nonce',
+    'X-Payload'
   ],
   exposedHeaders: ['Authorization'],
   optionsSuccessStatus: 200
