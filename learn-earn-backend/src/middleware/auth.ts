@@ -13,6 +13,7 @@ export interface AuthenticatedRequest extends Request {
 
 /**
  * Verify device signature and authenticate user
+ * Supports both body-based auth (for POST/PUT) and header-based auth (for GET)
  */
 export async function authenticateDevice(
   req: AuthenticatedRequest,
@@ -20,14 +21,27 @@ export async function authenticateDevice(
   next: NextFunction
 ) {
   try {
-    const { deviceId, signature, nonce, payload } = req.body;
-    
-    if (!deviceId || !signature || !nonce || !payload) {
+    // Try to get deviceId from header first (for GET requests)
+    let deviceId = req.header('X-Device-ID');
+    let signature = req.header('X-Signature');
+    let nonce = req.header('X-Nonce');
+    let payload = req.header('X-Payload');
+
+    // If not in headers, check body (for POST/PUT requests)
+    if (!deviceId && req.body) {
+      deviceId = req.body.deviceId;
+      signature = req.body.signature;
+      nonce = req.body.nonce;
+      payload = req.body.payload;
+    }
+
+    // For simple GET requests, only deviceId is required
+    if (!deviceId) {
       return res.status(400).json({
         error: 'Missing required authentication fields'
       });
     }
-    
+
     // Find user by device ID
     const user = await User.findOne({ deviceId });
     if (!user) {
@@ -35,30 +49,32 @@ export async function authenticateDevice(
         error: 'Device not registered'
       });
     }
-    
-    // Verify signature
-    const message = JSON.stringify({ nonce, payload });
-    const isValidSignature = verifySignature(message, signature, user.pubKey);
-    
-    if (!isValidSignature) {
-      // Log failed authentication attempt
-      await Audit.create({
-        deviceId,
-        action: 'auth_failed',
-        detail: 'Invalid signature',
-        ipAddress: req.ip,
-        userAgent: req.get('User-Agent')
-      });
-      
-      return res.status(401).json({
-        error: 'Invalid signature'
-      });
+
+    // Verify signature if provided (required for sensitive operations)
+    if (signature && nonce && payload) {
+      const message = JSON.stringify({ nonce, payload });
+      const isValidSignature = verifySignature(message, signature, user.pubKey);
+
+      if (!isValidSignature) {
+        // Log failed authentication attempt
+        await Audit.create({
+          deviceId,
+          action: 'auth_failed',
+          detail: 'Invalid signature',
+          ipAddress: req.ip,
+          userAgent: req.get('User-Agent')
+        });
+
+        return res.status(401).json({
+          error: 'Invalid signature'
+        });
+      }
     }
-    
+
     // Update last active timestamp
     user.lastActiveAt = new Date();
     await user.save();
-    
+
     req.user = user;
     req.deviceId = deviceId;
     next();

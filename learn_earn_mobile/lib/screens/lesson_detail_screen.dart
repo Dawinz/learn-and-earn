@@ -21,6 +21,7 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
   final ScrollController _scrollController = ScrollController();
   Timer? _progressTimer;
   Timer? _saveTimer;
+  Timer? _adTimer;
   DateTime? _sessionStartTime;
   int _totalReadingTimeSeconds = 0;
   double _currentScrollPosition = 0.0;
@@ -36,6 +37,8 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
     _loadProgress();
     _startProgressTracking();
     _startAutoSave();
+    _showInitialAd();
+    _startPeriodicAds();
   }
 
   @override
@@ -44,6 +47,7 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
     _scrollController.dispose();
     _progressTimer?.cancel();
     _saveTimer?.cancel();
+    _adTimer?.cancel();
     _saveProgress(); // Save one last time before leaving
     super.dispose();
   }
@@ -135,6 +139,38 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
         _isSaving = false;
       });
     }
+  }
+
+  /// Show ad when lesson opens
+  Future<void> _showInitialAd() async {
+    // Wait a moment for the screen to render
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    if (!mounted) return;
+
+    try {
+      final appProvider = Provider.of<AppProvider>(context, listen: false);
+      await appProvider.showLessonAd();
+    } catch (e) {
+      print('Error showing initial lesson ad: $e');
+    }
+  }
+
+  /// Start periodic ads every 3 minutes
+  void _startPeriodicAds() {
+    _adTimer = Timer.periodic(const Duration(minutes: 3), (timer) async {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
+      try {
+        final appProvider = Provider.of<AppProvider>(context, listen: false);
+        await appProvider.showLessonAd();
+      } catch (e) {
+        print('Error showing periodic lesson ad: $e');
+      }
+    });
   }
 
   /// Mark lesson as complete manually
