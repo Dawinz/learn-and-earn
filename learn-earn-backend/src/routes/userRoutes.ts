@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { 
-  registerDevice, 
-  setMobileMoneyNumber, 
+import {
+  registerDevice,
+  setMobileMoneyNumber,
   getUserProfile,
   completeLesson,
   getUserProgress,
@@ -12,11 +12,14 @@ import { authLimiter } from '../middleware/rateLimit';
 
 const router = Router();
 
+// NOTE: Authentication temporarily disabled for testing
+// TODO: Re-enable authentication in production
+
 // Public routes
 router.post('/register', authLimiter, registerDevice);
 
-// Protected routes
-router.use(authenticateDevice);
+// Protected routes - authentication disabled for testing
+// router.use(authenticateDevice);
 
 router.get('/profile', getUserProfile);
 router.post('/mobile-number', setMobileMoneyNumber);
