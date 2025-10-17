@@ -116,7 +116,8 @@ class ApiService {
   // Request payout
   static Future<Map<String, dynamic>> requestPayout(
     String mobileNumber,
-    int amount,
+    int coins,
+    double amountUsd,
   ) async {
     try {
       final response = await http.post(
@@ -127,8 +128,11 @@ class ApiService {
         },
         body: jsonEncode({
           'mobileNumber': mobileNumber,
-          'amount': amount,
+          'coins': coins,
+          'amountUsd': amountUsd,
           'timestamp': DateTime.now().toIso8601String(),
+          'signature': 'placeholder_signature', // TODO: Implement proper signature
+          'nonce': DateTime.now().millisecondsSinceEpoch.toString(),
         }),
       );
 
@@ -406,6 +410,142 @@ class ApiService {
     } catch (e) {
       print('Backend health check failed: $e');
       return false;
+    }
+  }
+
+  // ===== LESSON PROGRESS TRACKING =====
+
+  /// Update lesson reading progress
+  static Future<Map<String, dynamic>> updateLessonProgress({
+    required String lessonId,
+    required double scrollPosition,
+    required int timeSpentSeconds,
+    DateTime? sessionStartedAt,
+    DateTime? sessionEndedAt,
+    int? sessionDuration,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/users/lessons/$lessonId/progress'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (_deviceId != null) 'X-Device-ID': _deviceId!,
+        },
+        body: jsonEncode({
+          'scrollPosition': scrollPosition,
+          'timeSpentSeconds': timeSpentSeconds,
+          if (sessionStartedAt != null)
+            'sessionStartedAt': sessionStartedAt.toIso8601String(),
+          if (sessionEndedAt != null)
+            'sessionEndedAt': sessionEndedAt.toIso8601String(),
+          if (sessionDuration != null) 'sessionDuration': sessionDuration,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        print(
+          'Failed to update lesson progress: ${response.statusCode} - ${response.body}',
+        );
+        return {
+          'success': false,
+          'message': 'Failed to update progress: ${response.body}',
+        };
+      }
+    } catch (e) {
+      print('Error updating lesson progress: $e');
+      return {'success': false, 'message': 'Failed to update progress: $e'};
+    }
+  }
+
+  /// Get progress for a specific lesson
+  static Future<Map<String, dynamic>> getLessonProgress(String lessonId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/users/lessons/$lessonId/progress'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (_deviceId != null) 'X-Device-ID': _deviceId!,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        print(
+          'Failed to get lesson progress: ${response.statusCode} - ${response.body}',
+        );
+        // Return default progress
+        return {
+          'lessonId': lessonId,
+          'scrollPosition': 0,
+          'timeSpentSeconds': 0,
+          'isCompleted': false,
+        };
+      }
+    } catch (e) {
+      print('Error getting lesson progress: $e');
+      // Return default progress
+      return {
+        'lessonId': lessonId,
+        'scrollPosition': 0,
+        'timeSpentSeconds': 0,
+        'isCompleted': false,
+      };
+    }
+  }
+
+  /// Get all lesson progress
+  static Future<Map<String, dynamic>> getAllLessonProgress() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/users/lessons/progress'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (_deviceId != null) 'X-Device-ID': _deviceId!,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        print(
+          'Failed to get all lesson progress: ${response.statusCode} - ${response.body}',
+        );
+        return {'progress': [], 'completedCount': 0};
+      }
+    } catch (e) {
+      print('Error getting all lesson progress: $e');
+      return {'progress': [], 'completedCount': 0};
+    }
+  }
+
+  /// Reset progress for a specific lesson
+  static Future<Map<String, dynamic>> resetLessonProgress(String lessonId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/users/lessons/$lessonId/progress'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (_deviceId != null) 'X-Device-ID': _deviceId!,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        print(
+          'Failed to reset lesson progress: ${response.statusCode} - ${response.body}',
+        );
+        return {
+          'success': false,
+          'message': 'Failed to reset progress: ${response.body}',
+        };
+      }
+    } catch (e) {
+      print('Error resetting lesson progress: $e');
+      return {'success': false, 'message': 'Failed to reset progress: $e'};
     }
   }
 }

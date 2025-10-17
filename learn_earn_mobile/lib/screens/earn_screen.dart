@@ -127,41 +127,13 @@ class EarnScreen extends StatelessWidget {
                                   Colors.orange,
                                   'Earn 15 coins',
                                 ),
-                                _buildEarnOption(
+                                _buildCompleteQuizOption(
                                   context,
-                                  'Complete Quiz',
-                                  Icons.quiz,
-                                  Colors.purple,
-                                  'Earn 20 coins',
-                                  () {
-                                    appProvider.completeQuiz();
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Quiz completed! +20 coins',
-                                        ),
-                                        backgroundColor: Colors.green,
-                                      ),
-                                    );
-                                  },
+                                  appProvider,
                                 ),
-                                _buildEarnOption(
+                                _buildDailyLoginOption(
                                   context,
-                                  'Daily Login',
-                                  Icons.calendar_today,
-                                  Colors.blue,
-                                  'Earn 5 coins',
-                                  () {
-                                    appProvider.dailyLogin();
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Daily login bonus! +5 coins',
-                                        ),
-                                        backgroundColor: Colors.green,
-                                      ),
-                                    );
-                                  },
+                                  appProvider,
                                 ),
                                 _buildEarnOption(
                                   context,
@@ -186,76 +158,7 @@ class EarnScreen extends StatelessWidget {
                             const SizedBox(height: 24),
 
                             // Streak Section
-                            Card(
-                              elevation: 4,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(20.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          Icons.local_fire_department,
-                                          color: Colors.orange[600],
-                                          size: 24,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        const Text(
-                                          'Learning Streak',
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Row(
-                                      children: [
-                                        Text(
-                                          '7 days',
-                                          style: TextStyle(
-                                            fontSize: 32,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.orange[600],
-                                          ),
-                                        ),
-                                        const SizedBox(width: 16),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                'Keep it up!',
-                                                style: TextStyle(
-                                                  fontSize: 14,
-                                                  color: Colors.grey[600],
-                                                ),
-                                              ),
-                                              const SizedBox(height: 4),
-                                              LinearProgressIndicator(
-                                                value: 0.7,
-                                                backgroundColor:
-                                                    Colors.grey[300],
-                                                valueColor:
-                                                    AlwaysStoppedAnimation<
-                                                      Color
-                                                    >(Colors.orange[600]!),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
+                            _buildLearningStreak(appProvider),
 
                             const SizedBox(height: 16),
                           ],
@@ -385,6 +288,311 @@ class EarnScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildCompleteQuizOption(
+    BuildContext context,
+    AppProvider appProvider,
+  ) {
+    final color = Colors.purple;
+    // Get lessons that have quizzes and haven't been completed yet
+    final availableLessons = appProvider.lessons.where((lesson) =>
+      lesson.quiz.isNotEmpty && !lesson.isCompleted
+    ).toList();
+
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: InkWell(
+        onTap: () {
+          if (availableLessons.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'No quizzes available! Complete some lessons first.',
+                ),
+                backgroundColor: Colors.orange,
+              ),
+            );
+            return;
+          }
+
+          // Show dialog to select a lesson
+          _showQuizSelectionDialog(context, availableLessons);
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [color.withOpacity(0.1), color.withOpacity(0.05)],
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.quiz, size: 32, color: color),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Complete Quiz',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  availableLessons.isEmpty
+                    ? 'No quizzes available'
+                    : 'Earn 20 coins',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+                if (availableLessons.isNotEmpty)
+                  Container(
+                    margin: const EdgeInsets.only(top: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${availableLessons.length} available',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showQuizSelectionDialog(BuildContext context, List lessons) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Select a Lesson Quiz'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: lessons.length,
+            itemBuilder: (context, index) {
+              final lesson = lessons[index];
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: Colors.purple.withOpacity(0.2),
+                  child: const Icon(Icons.quiz, color: Colors.purple),
+                ),
+                title: Text(
+                  lesson.title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+                subtitle: Text(
+                  '${lesson.quiz.length} questions • ${lesson.coinReward} coins',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                onTap: () {
+                  Navigator.pop(context);
+                  // Navigate to lesson detail screen
+                  Navigator.pushNamed(
+                    context,
+                    '/lesson-detail',
+                    arguments: lesson,
+                  );
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDailyLoginOption(
+    BuildContext context,
+    AppProvider appProvider,
+  ) {
+    final canClaim = appProvider.canClaimDailyLogin;
+    final color = Colors.blue;
+
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: InkWell(
+        onTap: canClaim
+            ? () async {
+                // Show confirmation dialog with rewarded ad
+                final result = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Daily Login Bonus'),
+                    content: const Text(
+                      'Watch a short ad to claim your daily login bonus of 5 coins!',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Cancel'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text('Watch Ad'),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (result == true && context.mounted) {
+                  // Show loading indicator
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (context) => const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+
+                  // Claim daily login (will show rewarded ad)
+                  final claimResult = await appProvider.claimDailyLogin();
+
+                  if (context.mounted) {
+                    // Close loading indicator
+                    Navigator.pop(context);
+
+                    // Show result
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(claimResult['message'] ?? 'Unknown error'),
+                        backgroundColor: claimResult['success'] == true
+                            ? Colors.green
+                            : Colors.orange,
+                      ),
+                    );
+                  }
+                }
+              }
+            : () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Daily login already claimed! Come back tomorrow.',
+                    ),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              },
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: canClaim
+                  ? [color.withOpacity(0.1), color.withOpacity(0.05)]
+                  : [Colors.grey.withOpacity(0.1), Colors.grey.withOpacity(0.05)],
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: canClaim
+                        ? color.withOpacity(0.1)
+                        : Colors.grey.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.calendar_today,
+                    size: 32,
+                    color: canClaim ? color : Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Daily Login',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: canClaim ? color : Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  canClaim ? 'Earn 5 coins' : 'Come back tomorrow',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                if (!canClaim)
+                  Container(
+                    margin: const EdgeInsets.only(top: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      'Claimed',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildRewardedAdOption(
     BuildContext context,
     String title,
@@ -496,6 +704,115 @@ class EarnScreen extends StatelessWidget {
             child: const Text('OK'),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLearningStreak(AppProvider appProvider) {
+    final streak = appProvider.learningStreak;
+    final streakText = streak == 0
+        ? 'Start today!'
+        : '$streak ${streak == 1 ? 'day' : 'days'}';
+
+    // Calculate progress for weekly streak (0-7 days = 0-1.0 progress)
+    final progress = streak == 0 ? 0.0 : (streak % 7) / 7.0;
+
+    // Determine message based on streak length
+    String message;
+    if (streak == 0) {
+      message = 'Complete a lesson to start your streak!';
+    } else if (streak >= 30) {
+      message = 'Legendary! You\'re unstoppable! 🔥';
+    } else if (streak >= 14) {
+      message = 'Amazing! Keep the momentum going!';
+    } else if (streak >= 7) {
+      message = 'Excellent! One week strong!';
+    } else {
+      message = 'Keep learning daily to build your streak!';
+    }
+
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.orange.withOpacity(0.1),
+              Colors.orange.withOpacity(0.05),
+            ],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.local_fire_department,
+                      color: Colors.orange,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Learning Streak',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF333333),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          streakText,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 8,
+                  backgroundColor: Colors.grey[300],
+                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.orange),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                message,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

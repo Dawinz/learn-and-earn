@@ -14,6 +14,9 @@ class AppProvider extends ChangeNotifier {
   List<Lesson> _lessons = [];
   List<Transaction> _transactions = [];
   DateTime? _lastResetDate;
+  DateTime? _lastDailyLogin;
+  int _learningStreak = 0;
+  DateTime? _lastStreakDate;
   User? _user;
   bool _isAuthenticated = false;
   bool _isOnline = true;
@@ -22,6 +25,8 @@ class AppProvider extends ChangeNotifier {
   int get coins => _coins;
   List<Lesson> get lessons => _lessons;
   List<Transaction> get transactions => _transactions;
+  int get learningStreak => _learningStreak;
+  DateTime? get lastStreakDate => _lastStreakDate;
   User? get user => _user;
   bool get isAuthenticated => _isAuthenticated;
   bool get isOnline => _isOnline;
@@ -145,6 +150,9 @@ class AppProvider extends ChangeNotifier {
     _coins = await StorageService.loadCoins();
     _lessons = await StorageService.loadLessons();
     _transactions = await StorageService.loadTransactions();
+    _lastDailyLogin = await StorageService.loadLastDailyLogin();
+    _learningStreak = await StorageService.loadLearningStreak();
+    _lastStreakDate = await StorageService.loadLastStreakDate();
 
     // If no saved data, initialize with default data
     if (_lessons.isEmpty) {
@@ -1450,6 +1458,1050 @@ YouTube is the world's second-largest search engine with over 2 billion logged-i
           ),
         ],
       ),
+
+      // Lesson 14: Content Creation & Monetization
+      Lesson(
+        id: '14',
+        title: 'Content Creation & Monetization: Build Your Online Brand',
+        summary: 'Master content creation across YouTube, blogging, and social media. Learn to monetize through ads, sponsorships, and digital products to earn \$3K-10K+ monthly.',
+        contentMD: '''# Content Creation & Monetization: Build Your Online Brand
+
+## Introduction: The Creator Economy Revolution
+
+The creator economy is worth over \$100 billion globally. Content creators earn six and seven-figure incomes by sharing knowledge, entertainment, and expertise online. This guide will show you how to build a profitable content creation business from zero.
+
+## Understanding the Creator Economy
+
+### Why Content Creation Works
+
+**The Opportunity:**
+- 50+ million creators worldwide
+- Average full-time creator: \$50K-150K+ annually
+- Multiple revenue streams from single content
+- Build once, earn forever (passive income)
+- Low startup costs (\$0-500)
+
+**Revenue Streams:**
+- Ad revenue (YouTube, blog ads)
+- Sponsorships and brand deals
+- Affiliate marketing
+- Digital products (courses, ebooks)
+- Memberships/subscriptions
+- Coaching and consulting
+- Speaking engagements
+- Merchandise
+
+### Income Timeline
+
+**Months 1-3: Foundation (\$0-100/month)**
+- Building audience
+- Creating consistently
+- Learning what works
+- First sponsorships
+
+**Months 4-6: Growth (\$100-1000/month)**
+- Growing 20-50%/month
+- Monetization enabled
+- First brand deals
+- Affiliate income building
+
+**Months 7-12: Momentum (\$1000-3000/month)**
+- Established audience
+- Multiple revenue streams
+- Regular sponsorships
+- Digital products
+
+**Year 2+: Scale (\$3000-10,000+/month)**
+- Authority in niche
+- Premium sponsorships
+- Course sales scaling
+- Diversified income
+
+## Phase 1: Finding Your Content Niche
+
+### The Niche Selection Framework
+
+**Formula:** Niche = (Skills + Passion) × Market Demand × Monetization
+
+**High-Paying Niches:**
+
+**Business & Finance (\$5-50+ CPM)**
+- Personal finance
+- Investing/stocks
+- Entrepreneurship
+- Real estate
+- Online business
+
+## Phase 2: YouTube Strategy
+
+### Getting Started
+
+**Why YouTube:**
+- 2+ billion monthly users
+- Best discovery algorithm
+- Multiple monetization options
+- Long-term passive income
+
+**Requirements:**
+- 1,000 subscribers
+- 4,000 watch hours (12 months)
+
+**Revenue Potential:**
+- Ad revenue: \$2-20 per 1,000 views
+- 100K views/month = \$500-2,000
+- Sponsorships: \$10-50 per 1,000 views
+
+## Conclusion
+
+Content creation offers unlimited income potential. Success requires consistency, value creation, and patience.
+
+**Key Takeaways:**
+1. Choose profitable niche aligned with skills
+2. Consistency is everything
+3. Provide massive value before selling
+4. Build email list from day one
+5. Diversify income streams
+        ''',
+        estMinutes: 20,
+        coinReward: 100,
+        category: 'How to Make Money Online',
+        tags: ['content-creation', 'youtube', 'blogging', 'social-media', 'online-income'],
+        createdAt: DateTime.now().subtract(const Duration(days: 14)),
+        updatedAt: DateTime.now(),
+        quiz: [
+          QuizQuestion(
+            question: 'What is the typical ad revenue per 1,000 views on YouTube for business/finance content?',
+            options: [
+              '\$1-3 (CPM)',
+              '\$5-50+ (CPM)',
+              '\$100-200 (CPM)',
+              '\$0.10-0.50 (CPM)',
+            ],
+            correctAnswer: 1,
+            explanation: 'Business and finance content has high CPM rates of \$5-50+ per 1,000 views because advertisers in these niches pay premium prices for qualified audiences.',
+          ),
+          QuizQuestion(
+            question: 'What is the most important factor for growing a YouTube channel in the first 1,000 subscribers?',
+            options: [
+              'Expensive camera equipment',
+              'Consistency and quality content',
+              'Paying for ads',
+              'Having a large social media following',
+            ],
+            correctAnswer: 1,
+            explanation: 'Consistency and quality content are the most important factors for growth. The YouTube algorithm rewards consistent uploading and viewer engagement.',
+          ),
+          QuizQuestion(
+            question: 'What percentage of your content should be value-driven vs promotional?',
+            options: [
+              '50% value, 50% promotional',
+              '60% value, 40% promotional',
+              '80% value, 20% promotional',
+              '100% value, 0% promotional',
+            ],
+            correctAnswer: 2,
+            explanation: 'The 80/20 rule works best: 80% of content should provide value while only 20% should be promotional.',
+          ),
+        ],
+      ),
+
+      // Lesson 15: Affiliate Marketing Strategies
+      Lesson(
+        id: '15',
+        title: 'Affiliate Marketing Mastery: Earn Commissions Promoting Products',
+        summary: 'Master affiliate marketing strategies to earn passive income by promoting products you love. Learn to build trust, create converting content, and scale to \$5K-15K+ monthly.',
+        contentMD: '''# Affiliate Marketing Mastery: Earn Commissions Promoting Products
+
+## Introduction: The Power of Affiliate Marketing
+
+Affiliate marketing is a \$17 billion industry growing 10% annually. It allows you to earn commissions by recommending products—no inventory, no customer service, no product creation.
+
+## Understanding Affiliate Marketing
+
+### How It Works
+
+**The Business Model:**
+1. Join an affiliate program
+2. Get unique tracking links
+3. Promote products to your audience
+4. People buy through your links
+5. You earn commission (1-75%)
+
+**Why It Works:**
+- Low startup cost (\$0-500)
+- No product creation needed
+- No inventory or shipping
+- Passive income potential
+- Scale indefinitely
+
+### Income Potential
+
+**Month 1-3: Learning (\$0-500)**
+- Understanding your audience
+- Testing different products
+- Building trust
+
+**Month 4-6: Growth (\$500-2,000)**
+- Consistent content
+- Building authority
+- Optimizing conversions
+
+**Month 7-12: Momentum (\$2,000-5,000)**
+- Established audience
+- High-converting content
+- Multiple income sources
+
+**Year 2+: Scale (\$5,000-15,000+)**
+- Authority in niche
+- Predictable income
+- Team support
+
+## Phase 1: Choosing Your Niche
+
+**High-Commission Niches:**
+
+**Software/SaaS (20-50% recurring)**
+- Email marketing tools
+- Website builders
+- SEO tools
+
+**Finance (Varies, \$50-300+ per lead)**
+- Credit cards
+- Investment platforms
+- Insurance
+
+**Online Education (30-50%)**
+- Online courses
+- Membership sites
+
+## Phase 2: Finding Affiliate Programs
+
+### Top Affiliate Networks
+
+**Amazon Associates**
+- Pros: Huge product selection
+- Cons: Low commissions (1-10%)
+- Best for: Physical products
+
+**ShareASale**
+- 4,000+ merchants
+- Reliable tracking
+- Best for: Various niches
+
+**ClickBank**
+- High commissions (50-75%)
+- Best for: Digital products
+
+## Conclusion
+
+Affiliate marketing offers incredible passive income potential with low startup costs.
+
+**Key Takeaways:**
+1. Only promote quality products
+2. Provide value before promoting
+3. Build email list from day one
+4. Diversify products and traffic sources
+5. Always disclose affiliate relationships
+        ''',
+        estMinutes: 18,
+        coinReward: 90,
+        category: 'How to Make Money Online',
+        tags: ['affiliate-marketing', 'passive-income', 'online-business', 'digital-marketing'],
+        createdAt: DateTime.now().subtract(const Duration(days: 13)),
+        updatedAt: DateTime.now(),
+        quiz: [
+          QuizQuestion(
+            question: 'What is the recommended content ratio for affiliate marketing?',
+            options: [
+              '50% value, 50% promotion',
+              '70% value, 20% soft mentions, 10% direct promotion',
+              '30% value, 70% promotion',
+              '90% value, 10% promotion',
+            ],
+            correctAnswer: 1,
+            explanation: 'The 70/20/10 rule works best for building trust while monetizing effectively.',
+          ),
+          QuizQuestion(
+            question: 'Which niche typically offers recurring commissions of 20-50%?',
+            options: [
+              'Physical products',
+              'Software/SaaS products',
+              'Books and ebooks',
+              'Fashion and apparel',
+            ],
+            correctAnswer: 1,
+            explanation: 'Software and SaaS products typically offer 20-50% recurring monthly commissions.',
+          ),
+          QuizQuestion(
+            question: 'What is required by the FTC for affiliate marketers?',
+            options: [
+              'No disclosure needed',
+              'Disclosure only on homepage',
+              'Clear disclosure before affiliate links on every page',
+              'Disclosure in website footer',
+            ],
+            correctAnswer: 2,
+            explanation: 'The FTC requires clear and conspicuous disclosure before affiliate links on every page.',
+          ),
+        ],
+      ),
+
+      // Lesson 16: Virtual Assistant Services
+      Lesson(
+        id: '16',
+        title: 'Virtual Assistant Services: Build a Flexible Remote Career',
+        summary: 'Learn how to start and scale a virtual assistant business. Master in-demand skills, find high-paying clients, and earn \$2K-6K+ monthly working from anywhere.',
+        contentMD: '''# Virtual Assistant Services: Build a Flexible Remote Career
+
+## Introduction: The VA Opportunity
+
+The virtual assistant industry is booming with over 59% of businesses now hiring VAs. It's a flexible, location-independent career with low startup costs and high earning potential.
+
+## Understanding Virtual Assistant Work
+
+### What is a Virtual Assistant?
+
+A VA provides administrative, technical, or creative assistance to clients remotely. Services range from email management to social media marketing.
+
+**Why VA Work is Growing:**
+- Remote work revolution
+- Business cost savings
+- Global talent pool
+- Flexible arrangements
+
+### Income Potential
+
+**Beginners (\$10-20/hour)**
+- Basic admin tasks
+- Email management
+- Data entry
+- Scheduling
+
+**Intermediate (\$20-35/hour)**
+- Social media management
+- Content writing
+- Customer service
+- Bookkeeping
+
+**Advanced (\$35-75+/hour)**
+- Project management
+- Web development
+- Graphic design
+- Marketing strategy
+
+## Phase 1: Choosing Your Services
+
+**Popular VA Services:**
+
+**Administrative**
+- Email management
+- Calendar scheduling
+- Travel booking
+- Document preparation
+
+**Social Media**
+- Content creation
+- Post scheduling
+- Community management
+- Analytics reporting
+
+**Content & Marketing**
+- Blog writing
+- Newsletter creation
+- SEO optimization
+- Email campaigns
+
+## Phase 2: Finding Clients
+
+**Freelance Platforms:**
+- Upwork
+- Fiverr
+- Freelancer.com
+- Belay
+
+**Direct Outreach:**
+- LinkedIn networking
+- Cold email campaigns
+- Referrals
+- Local business groups
+
+## Conclusion
+
+Virtual assistant work offers flexibility and growth potential.
+
+**Key Takeaways:**
+1. Start with 2-3 core services
+2. Communication and reliability are key
+3. Build portfolio with testimonials
+4. Set clear boundaries and rates
+5. Continuously learn new skills
+        ''',
+        estMinutes: 17,
+        coinReward: 85,
+        category: 'How to Make Money Online',
+        tags: ['virtual-assistant', 'remote-work', 'freelancing', 'online-business'],
+        createdAt: DateTime.now().subtract(const Duration(days: 12)),
+        updatedAt: DateTime.now(),
+        quiz: [
+          QuizQuestion(
+            question: 'What is the typical hourly rate for an experienced VA specializing in a technical skill?',
+            options: [
+              '\$5-10/hour',
+              '\$10-15/hour',
+              '\$20-35/hour',
+              '\$50-100/hour',
+            ],
+            correctAnswer: 2,
+            explanation: 'Experienced VAs with specialized technical skills typically charge \$20-35/hour or more.',
+          ),
+          QuizQuestion(
+            question: 'Which platform is best for beginners starting their VA career?',
+            options: [
+              'Only work with local businesses',
+              'Upwork and other freelance platforms',
+              'Start your own agency immediately',
+              'Wait until you have 5 years of experience',
+            ],
+            correctAnswer: 1,
+            explanation: 'Upwork and similar platforms provide access to clients and built-in payment protection.',
+          ),
+          QuizQuestion(
+            question: 'What is the most important skill for VA success?',
+            options: [
+              'Technical expertise only',
+              'Communication and reliability',
+              'Working the most hours',
+              'Having expensive equipment',
+            ],
+            correctAnswer: 1,
+            explanation: 'Communication and reliability are most important for VA success.',
+          ),
+        ],
+      ),
+
+      // Lesson 17: Print on Demand Business
+      Lesson(
+        id: '17',
+        title: 'Print on Demand: Create & Sell Custom Products',
+        summary: 'Build a profitable print-on-demand business with zero inventory. Learn design, marketing, and scaling strategies to reach \$3K-8K+ monthly passive income.',
+        contentMD: '''# Print on Demand: Create & Sell Custom Products
+
+## Introduction: The POD Revolution
+
+Print-on-demand eliminates inventory risk while allowing you to sell custom products worldwide. No upfront costs, no storage, no shipping headaches.
+
+## Understanding Print on Demand
+
+### How POD Works
+
+1. Create designs for products
+2. Upload to POD platform
+3. Customer orders product
+4. POD service prints and ships
+5. You earn profit margin
+
+**Benefits:**
+- No inventory investment
+- No shipping logistics
+- Global reach
+- Passive income potential
+- Low startup costs (\$0-200)
+
+### Income Potential
+
+**Month 1-3: Foundation (\$0-300)**
+- Creating designs
+- Testing niches
+- Learning platforms
+- First sales
+
+**Month 4-6: Growth (\$300-1,500)**
+- Refined designs
+- Better marketing
+- Growing catalog
+- Repeat customers
+
+**Month 7-12: Momentum (\$1,500-3,000)**
+- Popular designs
+- Multiple products
+- Brand recognition
+- Scaling ads
+
+**Year 2+: Scale (\$3,000-8,000+)**
+- Established brand
+- Diverse product line
+- Multiple sales channels
+- Automated systems
+
+## Phase 1: Choosing Your Niche
+
+**Profitable Niches:**
+
+**Hobbies & Interests**
+- Pets
+- Gaming
+- Fitness
+- Crafts
+
+**Professions**
+- Teachers
+- Nurses
+- Engineers
+- Developers
+
+**Life Events**
+- Weddings
+- Birthdays
+- Graduations
+- Holidays
+
+## Phase 2: Platform Selection
+
+**Best POD Platforms:**
+
+**Printful**
+- Best quality
+- Wide product range
+- Integration with stores
+
+**Printify**
+- Competitive pricing
+- Many print providers
+- Good variety
+
+**Redbubble**
+- Built-in marketplace
+- Easy to start
+- Lower profit margins
+
+## Phase 3: Design Strategy
+
+**Design Tools:**
+- Canva (beginner-friendly)
+- Adobe Illustrator (professional)
+- Photoshop (photo editing)
+
+**Design Tips:**
+- Keep it simple
+- High resolution
+- Niche-specific
+- Test variations
+
+## Conclusion
+
+Print-on-demand rewards creativity and smart marketing.
+
+**Key Takeaways:**
+1. Choose targeted niche
+2. Create unique designs
+3. Test multiple products
+4. Market consistently
+5. Scale what works
+        ''',
+        estMinutes: 19,
+        coinReward: 95,
+        category: 'How to Make Money Online',
+        tags: ['print-on-demand', 'e-commerce', 'passive-income', 'design'],
+        createdAt: DateTime.now().subtract(const Duration(days: 11)),
+        updatedAt: DateTime.now(),
+        quiz: [
+          QuizQuestion(
+            question: 'What is the typical profit margin for print-on-demand products?',
+            options: [
+              '5-10%',
+              '20-40%',
+              '60-80%',
+              '90-100%',
+            ],
+            correctAnswer: 1,
+            explanation: 'Typical POD profit margins are 20-40%.',
+          ),
+          QuizQuestion(
+            question: 'Which platform is best for beginners starting POD?',
+            options: [
+              'Building your own website first',
+              'Etsy + Printful integration',
+              'Amazon only',
+              'Wholesale to retail stores',
+            ],
+            correctAnswer: 1,
+            explanation: 'Etsy + Printful is best for beginners with built-in traffic.',
+          ),
+          QuizQuestion(
+            question: 'What is the most important factor for POD success?',
+            options: [
+              'Having the cheapest prices',
+              'Unique designs in a targeted niche',
+              'Selling generic designs to everyone',
+              'Only selling t-shirts',
+            ],
+            correctAnswer: 1,
+            explanation: 'Unique designs in a targeted niche attract passionate customers.',
+          ),
+        ],
+      ),
+
+      // Lesson 18: Online Tutoring & Teaching
+      Lesson(
+        id: '18',
+        title: 'Online Tutoring & Teaching: Share Knowledge for Profit',
+        summary: 'Transform your expertise into income through online tutoring and teaching. Learn platforms, pricing, and marketing to earn \$2K-10K+ monthly helping students succeed.',
+        contentMD: '''# Online Tutoring & Teaching: Share Knowledge for Profit
+
+## Introduction: The Online Education Boom
+
+Online education is a \$400+ billion industry growing 20% annually. Students worldwide need help, and you can earn excellent income sharing your knowledge.
+
+## Understanding Online Tutoring
+
+### Why Online Tutoring Works
+
+**Benefits for Tutors:**
+- Work from home
+- Set your own rates
+- Flexible schedule
+- Help students succeed
+- Low startup costs
+
+**Benefits for Students:**
+- Convenient scheduling
+- Access to experts
+- Personalized attention
+- Affordable rates
+- Recorded sessions
+
+### Income Potential
+
+**Beginners (\$15-25/hour)**
+- General subjects
+- Elementary level
+- Group sessions
+
+**Intermediate (\$25-50/hour)**
+- Specialized subjects
+- High school level
+- Test prep basics
+
+**Advanced (\$50-150+/hour)**
+- Expert subjects
+- College level
+- SAT/ACT prep
+- Professional exams
+
+## Phase 1: Choosing Your Subject
+
+**High-Demand Subjects:**
+
+**Academic**
+- Math (all levels)
+- Science (Physics, Chemistry)
+- English/Writing
+- Foreign languages
+
+**Test Preparation**
+- SAT/ACT
+- GRE/GMAT
+- TOEFL/IELTS
+- Professional certifications
+
+**Skills & Hobbies**
+- Music lessons
+- Coding/Programming
+- Art & Design
+- Business skills
+
+## Phase 2: Platform Selection
+
+**Tutoring Platforms:**
+
+**Wyzant**
+- Large student base
+- Set your own rates
+- Build reputation
+- 25% platform fee
+
+**Tutor.com**
+- Steady demand
+- Flexible hours
+- Fixed rates
+- Background check required
+
+**VIPKid**
+- Teach English to Chinese students
+- \$14-22/hour
+- Early morning hours
+
+## Conclusion
+
+Online tutoring rewards patience and expertise.
+
+**Key Takeaways:**
+1. Start with subjects you know well
+2. Invest in good equipment
+3. Build positive reviews
+4. Provide personalized attention
+5. Focus on student results
+        ''',
+        estMinutes: 18,
+        coinReward: 90,
+        category: 'How to Make Money Online',
+        tags: ['online-tutoring', 'teaching', 'education', 'remote-work'],
+        createdAt: DateTime.now().subtract(const Duration(days: 10)),
+        updatedAt: DateTime.now(),
+        quiz: [
+          QuizQuestion(
+            question: 'What is a typical hourly rate for online tutoring?',
+            options: [
+              '\$5-10/hour',
+              '\$10-20/hour',
+              '\$25-75/hour depending on subject and experience',
+              '\$100-200/hour for everyone',
+            ],
+            correctAnswer: 2,
+            explanation: 'Typical tutoring rates range from \$25-75/hour depending on subject and expertise.',
+          ),
+          QuizQuestion(
+            question: 'Which platform is best for new online tutors?',
+            options: [
+              'Only offer in-person tutoring',
+              'Wyzant or Tutor.com for built-in students',
+              'Start your own website immediately',
+              'Wait until you have a teaching degree',
+            ],
+            correctAnswer: 1,
+            explanation: 'Platforms like Wyzant provide access to students actively looking for tutors.',
+          ),
+          QuizQuestion(
+            question: 'What is the key to getting repeat tutoring clients?',
+            options: [
+              'Being the cheapest tutor available',
+              'Results, patience, and personalized attention',
+              'Only focusing on test prep',
+              'Teaching as many subjects as possible',
+            ],
+            correctAnswer: 1,
+            explanation: 'Results, patience, and personalized attention are key to repeat clients.',
+          ),
+        ],
+      ),
+
+      // Lesson 19: Social Media Management
+      Lesson(
+        id: '19',
+        title: 'Social Media Management: Turn Scrolling Into Income',
+        summary: 'Build a lucrative social media management business. Master content creation, engagement strategies, and client management to earn \$2K-8K+ monthly managing brands.',
+        contentMD: '''# Social Media Management: Turn Scrolling Into Income
+
+## Introduction: The SMM Opportunity
+
+Businesses need social media presence but lack time and expertise. Social media managers earn \$2K-8K+ monthly per client managing accounts, creating content, and growing audiences.
+
+## Understanding Social Media Management
+
+### What is Social Media Management?
+
+**Core Responsibilities:**
+- Content creation and scheduling
+- Community engagement
+- Analytics and reporting
+- Strategy development
+- Brand voice maintenance
+
+**Why Businesses Hire SMMs:**
+- Time savings
+- Expertise in platforms
+- Consistent posting
+- Better engagement
+- Professional content
+
+### Income Potential
+
+**Beginners (\$500-1,000/month per client)**
+- Basic posting
+- Simple graphics
+- 1-2 platforms
+
+**Intermediate (\$1,000-2,500/month per client)**
+- Strategic content
+- Multiple platforms
+- Analytics reporting
+- Community management
+
+**Advanced (\$2,500-5,000+/month per client)**
+- Full strategy
+- Ad management
+- Influencer outreach
+- Team coordination
+
+## Phase 1: Choosing Your Platforms
+
+**Platform Focus:**
+
+**Instagram**
+- Visual content
+- Stories & Reels
+- Influencer marketing
+- Shopping features
+
+**Facebook**
+- Community building
+- Groups management
+- Ads platform
+- Local businesses
+
+**LinkedIn**
+- B2B marketing
+- Professional content
+- Networking
+- Thought leadership
+
+**TikTok**
+- Short-form video
+- Viral trends
+- Young audience
+- Creative content
+
+## Phase 2: Service Packages
+
+**Basic Package (\$500-1,000)**
+- 12-15 posts per month
+- 1 platform
+- Basic graphics
+- Monthly report
+
+**Standard Package (\$1,000-2,500)**
+- 20-30 posts per month
+- 2-3 platforms
+- Custom graphics
+- Community engagement
+- Bi-weekly reports
+
+**Premium Package (\$2,500-5,000+)**
+- Daily posting
+- All major platforms
+- Video content
+- Paid ads management
+- Weekly strategy calls
+- Influencer outreach
+
+## Conclusion
+
+Social media management rewards creativity and consistency.
+
+**Key Takeaways:**
+1. Specialize in 2-3 platforms
+2. Understand each platform's algorithm
+3. Create engaging content
+4. Show measurable results
+5. Maintain 5-8 clients maximum
+        ''',
+        estMinutes: 17,
+        coinReward: 85,
+        category: 'How to Make Money Online',
+        tags: ['social-media', 'marketing', 'remote-work', 'digital-marketing'],
+        createdAt: DateTime.now().subtract(const Duration(days: 9)),
+        updatedAt: DateTime.now(),
+        quiz: [
+          QuizQuestion(
+            question: 'What is typical monthly pricing for social media management?',
+            options: [
+              '\$100-300/month per client',
+              '\$500-3,000/month per client',
+              '\$5,000-10,000/month for beginners',
+              '\$50/month per client',
+            ],
+            correctAnswer: 1,
+            explanation: 'Social media management typically costs \$500-3,000/month per client.',
+          ),
+          QuizQuestion(
+            question: 'How many clients should you aim for as a solo SMM?',
+            options: [
+              '1-2 clients maximum',
+              '20-30 clients',
+              '5-8 clients for sustainable workload',
+              '50+ clients',
+            ],
+            correctAnswer: 2,
+            explanation: '5-8 clients is ideal for solo social media managers.',
+          ),
+          QuizQuestion(
+            question: 'What is the most valuable skill for SMM success?',
+            options: [
+              'Having millions of personal followers',
+              'Understanding each platform\'s algorithm and audience behavior',
+              'Only knowing how to post photos',
+              'Being active 24/7',
+            ],
+            correctAnswer: 1,
+            explanation: 'Understanding platform algorithms and audience behavior is most valuable.',
+          ),
+        ],
+      ),
+
+      // Lesson 20: Passive Income Streams
+      Lesson(
+        id: '20',
+        title: 'Passive Income Streams: Build Wealth While You Sleep',
+        summary: 'Create multiple passive income streams that generate money 24/7. Learn proven strategies for digital products, investments, and automation to earn \$3K-15K+ monthly.',
+        contentMD: '''# Passive Income Streams: Build Wealth While You Sleep
+
+## Introduction: The Passive Income Dream
+
+True passive income requires upfront work but pays dividends forever. Build assets that generate income 24/7 with minimal maintenance.
+
+## Understanding Passive Income
+
+### What is Passive Income?
+
+**Definition:**
+Income that continues to flow after the initial work is complete, requiring minimal ongoing effort.
+
+**Common Myths:**
+- It's completely effortless
+- Get rich quick schemes
+- No initial work required
+- Guaranteed returns
+
+**Reality:**
+- Requires significant upfront effort
+- Takes time to build (6-24 months)
+- Needs occasional maintenance
+- Multiple streams recommended
+
+### Income Streams Overview
+
+**Digital Products**
+- Online courses
+- Ebooks
+- Templates
+- Software/apps
+
+**Investments**
+- Dividend stocks
+- Real estate
+- Index funds
+- Bonds
+
+**Content Monetization**
+- YouTube ads
+- Blog advertising
+- Podcast sponsorships
+- Affiliate marketing
+
+## Phase 1: Digital Products
+
+**Online Courses (\$1,000-10,000+/month)**
+
+**Creating Your Course:**
+1. Validate demand
+2. Pre-sell before creating
+3. Record content
+4. Build landing page
+5. Launch and market
+
+**Platforms:**
+- Teachable
+- Gumroad
+- Udemy
+- Skillshare
+
+**Ebooks (\$500-3,000/month)**
+
+**Self-Publishing:**
+- Amazon KDP
+- Gumroad
+- Your website
+- Bundle with courses
+
+## Phase 2: Investment Income
+
+**Dividend Stocks**
+- 2-6% annual yield
+- Quarterly payments
+- Compound returns
+- Long-term growth
+
+**Real Estate**
+- Rental properties
+- REITs (Real Estate Investment Trusts)
+- House flipping
+- Airbnb hosting
+
+**Index Funds**
+- S&P 500 index
+- Total market funds
+- 7-10% average return
+- Dollar-cost averaging
+
+## Phase 3: Content Monetization
+
+**YouTube Channel**
+- Ad revenue: \$1-5 per 1,000 views
+- Requires: 1,000 subs, 4,000 watch hours
+- Evergreen content compounds
+- Multiple revenue streams
+
+**Blog/Website**
+- Display ads
+- Affiliate marketing
+- Sponsored content
+- Digital products
+
+## Conclusion
+
+Build passive income sequentially—focus on one stream until successful.
+
+**Key Takeaways:**
+1. Start with ONE income stream
+2. Digital products have lowest barrier
+3. Investments require capital
+4. Consistency is critical
+5. Diversify over time (3-5 streams)
+6. Reinvest profits for growth
+7. Play the long game (12-24 months)
+        ''',
+        estMinutes: 21,
+        coinReward: 105,
+        category: 'How to Make Money Online',
+        tags: ['passive-income', 'investing', 'digital-products', 'wealth-building'],
+        createdAt: DateTime.now().subtract(const Duration(days: 8)),
+        updatedAt: DateTime.now(),
+        quiz: [
+          QuizQuestion(
+            question: 'What is true passive income?',
+            options: [
+              'Income that requires no initial work',
+              'Income that generates 24/7 after upfront effort with minimal maintenance',
+              'Any freelance work',
+              'Only inheritance money',
+            ],
+            correctAnswer: 1,
+            explanation: 'True passive income requires significant upfront work but then generates income with minimal maintenance.',
+          ),
+          QuizQuestion(
+            question: 'Which passive income stream can be started with the lowest investment?',
+            options: [
+              'Real estate investing',
+              'Stock market investing',
+              'Digital products (ebooks, courses)',
+              'Opening a franchise',
+            ],
+            correctAnswer: 2,
+            explanation: 'Digital products can be created with \$0-100 investment.',
+          ),
+          QuizQuestion(
+            question: 'How many passive income streams should you aim to build?',
+            options: [
+              'Focus on 1 until it\'s successful, then add more',
+              'Start 10-20 simultaneously',
+              'Passive income doesn\'t work',
+              'Only focus on one forever',
+            ],
+            correctAnswer: 0,
+            explanation: 'Focus on ONE stream until successful, then add more. Build sequentially: 1, then 2, then 3-5 total.',
+          ),
+        ],
+      ),
     ];
 
     // Initialize sample transactions
@@ -1668,8 +2720,121 @@ YouTube is the world's second-largest search engine with over 2 billion logged-i
     await StorageService.saveTransactions(_transactions);
   }
 
+  // Check if daily login is available
+  bool get canClaimDailyLogin {
+    if (_lastDailyLogin == null) return true;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final lastLogin = DateTime(
+      _lastDailyLogin!.year,
+      _lastDailyLogin!.month,
+      _lastDailyLogin!.day,
+    );
+    return lastLogin.isBefore(today);
+  }
+
+  // Daily login with rewarded ad requirement
+  Future<Map<String, dynamic>> claimDailyLogin() async {
+    // Check if already claimed today
+    if (!canClaimDailyLogin) {
+      return {
+        'success': false,
+        'message': 'Daily login already claimed today. Come back tomorrow!',
+      };
+    }
+
+    // Show rewarded ad first
+    try {
+      final reward = await AdService.instance.showRewardedAd();
+      if (reward != null) {
+        // Ad watched successfully, give coins
+        addCoins(5, 'Daily Login'); // 5 coins for daily login as per README
+
+        // Update last daily login date
+        _lastDailyLogin = DateTime.now();
+        await StorageService.saveLastDailyLogin(_lastDailyLogin!);
+        await _saveData();
+
+        // Update learning streak
+        _updateLearningStreak();
+
+        notifyListeners();
+
+        return {
+          'success': true,
+          'message': 'Daily login bonus claimed! +5 coins',
+          'coins': 5,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': 'Please watch the ad to claim your daily login bonus.',
+        };
+      }
+    } catch (e) {
+      print('Error showing daily login ad: $e');
+      return {
+        'success': false,
+        'message': 'Ad not available. Please try again later.',
+      };
+    }
+  }
+
+  // Legacy method for backward compatibility (deprecated)
+  @deprecated
   void dailyLogin() {
     addCoins(5, 'Daily Login'); // 5 coins for daily login as per README
+  }
+
+  // Update learning streak
+  void _updateLearningStreak() async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    if (_lastStreakDate == null) {
+      _learningStreak = 1;
+      _lastStreakDate = today;
+    } else {
+      final lastStreak = DateTime(
+        _lastStreakDate!.year,
+        _lastStreakDate!.month,
+        _lastStreakDate!.day,
+      );
+
+      final daysDifference = today.difference(lastStreak).inDays;
+
+      if (daysDifference == 0) {
+        // Same day, no change
+        return;
+      } else if (daysDifference == 1) {
+        // Consecutive day, increment streak
+        _learningStreak++;
+        _lastStreakDate = today;
+      } else {
+        // Streak broken, reset to 1
+        _learningStreak = 1;
+        _lastStreakDate = today;
+      }
+    }
+
+    // Save locally
+    StorageService.saveLearningStreak(_learningStreak);
+    StorageService.saveLastStreakDate(_lastStreakDate!);
+
+    // Sync with backend if user is authenticated
+    if (_isAuthenticated && _isOnline) {
+      try {
+        // Backend sync can be implemented when backend endpoint is available
+        // Example: await ApiService.updateLearningStreak(_learningStreak, _lastStreakDate!);
+        if (kDebugMode) {
+          print('Learning streak synced: $_learningStreak days');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('Failed to sync learning streak with backend: $e');
+        }
+      }
+    }
   }
 
   void completeQuiz() {
@@ -1691,7 +2856,10 @@ YouTube is the world's second-largest search engine with over 2 billion logged-i
         };
       }
 
-      final result = await ApiService.requestPayout(mobileNumber, _coins);
+      // Convert coins to USD (assuming 1000 coins = $1)
+      final amountUsd = _coins / 1000.0;
+
+      final result = await ApiService.requestPayout(mobileNumber, _coins, amountUsd);
       if (result['success'] == true) {
         // Reset coins after successful payout request
         _coins = 0;

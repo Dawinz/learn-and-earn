@@ -2,11 +2,16 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IPayout extends Document {
   deviceId: string;
+  mobileNumber: string;
+  coins: number;
   amountUsd: number;
-  status: 'pending' | 'paid' | 'rejected';
+  status: 'pending' | 'approved' | 'paid' | 'rejected' | 'canceled';
   reason?: string;
   requestedAt: Date;
+  approvedAt?: Date;
   paidAt?: Date;
+  rejectedAt?: Date;
+  userRegisteredAt?: Date;
   txRef?: string;
   adminNotes?: string;
   signature: string;
@@ -14,46 +19,64 @@ export interface IPayout extends Document {
 }
 
 const PayoutSchema = new Schema<IPayout>({
-  deviceId: { 
-    type: String, 
+  deviceId: {
+    type: String,
     required: true,
-    index: true 
+    index: true
   },
-  amountUsd: { 
-    type: Number, 
+  mobileNumber: {
+    type: String,
+    required: true
+  },
+  coins: {
+    type: Number,
     required: true,
-    min: 0 
+    min: 0
   },
-  status: { 
-    type: String, 
-    enum: ['pending', 'paid', 'rejected'],
+  amountUsd: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'paid', 'rejected', 'canceled'],
     default: 'pending',
-    index: true 
+    index: true
   },
-  reason: { 
-    type: String 
+  reason: {
+    type: String
   },
-  requestedAt: { 
-    type: Date, 
+  requestedAt: {
+    type: Date,
     default: Date.now,
-    index: true 
+    index: true
   },
-  paidAt: { 
-    type: Date 
+  approvedAt: {
+    type: Date
   },
-  txRef: { 
-    type: String 
+  paidAt: {
+    type: Date
   },
-  adminNotes: { 
-    type: String 
+  rejectedAt: {
+    type: Date
   },
-  signature: { 
-    type: String, 
-    required: true 
+  userRegisteredAt: {
+    type: Date
   },
-  nonce: { 
-    type: String, 
-    required: true 
+  txRef: {
+    type: String
+  },
+  adminNotes: {
+    type: String
+  },
+  signature: {
+    type: String,
+    required: true
+  },
+  nonce: {
+    type: String,
+    required: true
   }
 });
 

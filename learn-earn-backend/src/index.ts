@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
+import path from 'path';
 import { apiLimiter } from './middleware/rateLimit';
 
 // Import routes
@@ -17,6 +18,7 @@ import quizRoutes from './routes/quizRoutes';
 import cooldownRoutes from './routes/cooldownRoutes';
 import dailyEarningRoutes from './routes/dailyEarningRoutes';
 import versionRoutes from './routes/versionRoutes';
+import lessonProgressRoutes from './routes/lessonProgressRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -25,7 +27,16 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 
 // Security middleware
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      connectSrc: ["'self'"],
+    },
+  },
+}));
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? [
@@ -67,6 +78,9 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// Serve static files from public directory
+app.use(express.static(path.join(__dirname, '../public')));
+
 // Rate limiting
 app.use(apiLimiter);
 
@@ -82,6 +96,7 @@ app.get('/health', (req: Request, res: Response) => {
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/users', lessonProgressRoutes); // Lesson progress routes under /api/users
 app.use('/api/earnings', earningRoutes);
 app.use('/api/payouts', payoutRoutes);
 app.use('/api/lessons', lessonRoutes);

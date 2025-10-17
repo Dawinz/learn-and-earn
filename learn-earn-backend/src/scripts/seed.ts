@@ -2,10 +2,24 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import Lesson from '../models/Lesson';
 import Settings from '../models/Settings';
+import { howToMakeMoneyOnlineLessons, youtubeSuccessLessons } from './newLessons';
 
 dotenv.config();
 
-const seedLessons = [
+// Using comprehensive lessons from newLessons.ts
+// 5 "How to Make Money Online" lessons + 1 "YouTube Channel Success" lesson
+const allLessons = [
+  ...howToMakeMoneyOnlineLessons,
+  ...youtubeSuccessLessons
+];
+
+const seedLessons = allLessons;
+console.log(`\n📚 Preparing to seed ${seedLessons.length} comprehensive lessons:`)
+console.log(`   - ${howToMakeMoneyOnlineLessons.length} "How to Make Money Online" lessons`);
+console.log(`   - ${youtubeSuccessLessons.length} "YouTube Channel Success" lessons\n`);
+
+// Old lessons - keeping for reference but not seeding
+const oldLessons = [
   {
     title: 'Getting Started with AI Freelancing',
     summary: 'Learn how to use AI tools to enhance your freelancing career and increase your earning potential.',
@@ -1072,6 +1086,8 @@ Remember: Successful affiliate marketing is about building trust and providing v
     isPublished: true
   }
 ];
+
+console.log(`Preparing to seed ${seedLessons.length} comprehensive lessons...`);
 
 const seedSettings = {
   minPayoutUsd: 5,

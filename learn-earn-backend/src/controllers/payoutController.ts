@@ -14,7 +14,7 @@ import { validatePayoutAmount, coinsToUsd } from '../utils/economics';
 export async function requestPayout(req: AuthenticatedRequest, res: Response) {
   try {
     const { deviceId } = req;
-    const { amountUsd, signature, nonce } = req.body;
+    const { mobileNumber, coins, amountUsd, signature, nonce } = req.body;
     
     if (!amountUsd || !signature || !nonce) {
       return res.status(400).json({
@@ -109,13 +109,19 @@ export async function requestPayout(req: AuthenticatedRequest, res: Response) {
       });
     }
     
+    // Get user registration date
+    const userRegisteredAt = user.createdAt || new Date();
+
     // Create payout request
     const payout = await Payout.create({
       deviceId,
+      mobileNumber: mobileNumber || 'Not provided',
+      coins: coins || 0,
       amountUsd,
       signature,
       nonce,
-      status: 'pending'
+      status: 'pending',
+      userRegisteredAt
     });
     
     // Set cooldown
@@ -222,10 +228,10 @@ export async function getPayoutStatus(req: AuthenticatedRequest, res: Response) 
 export async function getCooldownStatus(req: AuthenticatedRequest, res: Response) {
   try {
     const { deviceId } = req;
-    
+
     const cooldown = await Cooldown.findOne({ deviceId });
     const settings = await Settings.findOne();
-    
+
     if (!cooldown) {
       return res.json({
         isOnCooldown: false,
@@ -233,9 +239,9 @@ export async function getCooldownStatus(req: AuthenticatedRequest, res: Response
         cooldownHours: settings?.payoutCooldownHours || 48
       });
     }
-    
+
     const isOnCooldown = cooldown.nextPayoutAt > new Date();
-    
+
     res.json({
       isOnCooldown,
       nextPayoutAt: cooldown.nextPayoutAt,
@@ -245,5 +251,125 @@ export async function getCooldownStatus(req: AuthenticatedRequest, res: Response
   } catch (error) {
     console.error('Get cooldown status error:', error);
     res.status(500).json({ error: 'Failed to get cooldown status' });
+  }
+}
+
+/**
+ * ADMIN ENDPOINTS
+ */
+
+/**
+ * Get all payout requests (Admin only)
+ */
+export async function getAllPayouts(req: AuthenticatedRequest, res: Response) {
+  try {
+    const { page = 1, limit = 50, status } = req.query;
+
+    const query: any = {};
+    if (status && status !== 'all') {
+      query.status = status;
+    }
+
+    const payouts = await Payout.find(query)
+      .sort({ requestedAt: -1 })
+      .limit(Number(limit) * 1)
+      .skip((Number(page) - 1) * Number(limit))
+      .lean();
+
+    const total = await Payout.countDocuments(query);
+
+    // Get statistics
+    const stats = await Payout.aggregate([
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 },
+          totalAmount: { $sum: '$amountUsd' }
+        }
+      }
+    ]);
+
+    res.json({
+      success: true,
+      payouts,
+      stats,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        pages: Math.ceil(total / Number(limit))
+      }
+    });
+  } catch (error) {
+    console.error('Get all payouts error:', error);
+    res.status(500).json({ error: 'Failed to get payouts' });
+  }
+}
+
+/**
+ * Update payout status (Admin only)
+ */
+export async function updatePayoutStatus(req: AuthenticatedRequest, res: Response) {
+  try {
+    const { payoutId } = req.params;
+    const { status, txRef, adminNotes, reason } = req.body;
+
+    if (!status) {
+      return res.status(400).json({ error: 'Status is required' });
+    }
+
+    if (!['pending', 'approved', 'paid', 'rejected', 'canceled'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+
+    const updateData: any = {
+      status,
+      adminNotes
+    };
+
+    // Set timestamp based on status
+    if (status === 'approved') {
+      updateData.approvedAt = new Date();
+    } else if (status === 'paid') {
+      updateData.paidAt = new Date();
+      if (!updateData.approvedAt) {
+        updateData.approvedAt = new Date();
+      }
+      if (txRef) {
+        updateData.txRef = txRef;
+      }
+    } else if (status === 'rejected' || status === 'canceled') {
+      updateData.rejectedAt = new Date();
+      if (reason) {
+        updateData.reason = reason;
+      }
+    }
+
+    const payout = await Payout.findByIdAndUpdate(
+      payoutId,
+      updateData,
+      { new: true }
+    );
+
+    if (!payout) {
+      return res.status(404).json({ error: 'Payout not found' });
+    }
+
+    // Log the action
+    await Audit.create({
+      deviceId: payout.deviceId,
+      action: `payout_${status}`,
+      detail: `Payout ID: ${payout._id}, Amount: $${payout.amountUsd}`,
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
+    res.json({
+      success: true,
+      payout
+    });
+  } catch (error) {
+    console.error('Update payout status error:', error);
+    res.status(500).json({ error: 'Failed to update payout status' });
   }
 }

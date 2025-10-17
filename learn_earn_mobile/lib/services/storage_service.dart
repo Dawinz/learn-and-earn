@@ -8,6 +8,9 @@ class StorageService {
   static const String _lessonsKey = 'user_lessons';
   static const String _transactionsKey = 'user_transactions';
   static const String _lastResetDateKey = 'last_reset_date';
+  static const String _lastDailyLoginKey = 'last_daily_login';
+  static const String _learningStreakKey = 'learning_streak';
+  static const String _lastStreakDateKey = 'last_streak_date';
 
   static Future<void> saveCoins(int coins) async {
     final prefs = await SharedPreferences.getInstance();
@@ -140,11 +143,66 @@ class StorageService {
     }
   }
 
+  static Future<void> saveLastDailyLogin(DateTime date) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_lastDailyLoginKey, date.toIso8601String());
+  }
+
+  static Future<DateTime?> loadLastDailyLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+    final dateString = prefs.getString(_lastDailyLoginKey);
+
+    if (dateString == null) {
+      return null;
+    }
+
+    try {
+      return DateTime.parse(dateString);
+    } catch (e) {
+      print('Error loading last daily login: $e');
+      return null;
+    }
+  }
+
+  static Future<void> saveLearningStreak(int streak) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_learningStreakKey, streak);
+  }
+
+  static Future<int> loadLearningStreak() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_learningStreakKey) ?? 0;
+  }
+
+  static Future<void> saveLastStreakDate(DateTime date) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_lastStreakDateKey, date.toIso8601String());
+  }
+
+  static Future<DateTime?> loadLastStreakDate() async {
+    final prefs = await SharedPreferences.getInstance();
+    final dateString = prefs.getString(_lastStreakDateKey);
+
+    if (dateString == null) {
+      return null;
+    }
+
+    try {
+      return DateTime.parse(dateString);
+    } catch (e) {
+      print('Error loading last streak date: $e');
+      return null;
+    }
+  }
+
   static Future<void> clearAllData() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_coinsKey);
     await prefs.remove(_lessonsKey);
     await prefs.remove(_transactionsKey);
     await prefs.remove(_lastResetDateKey);
+    await prefs.remove(_lastDailyLoginKey);
+    await prefs.remove(_learningStreakKey);
+    await prefs.remove(_lastStreakDateKey);
   }
 }

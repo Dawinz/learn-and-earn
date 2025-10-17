@@ -4,6 +4,7 @@ import '../providers/app_provider.dart';
 import '../models/quiz.dart';
 import '../services/ad_service.dart';
 import 'quiz_detail_screen.dart';
+import 'lesson_detail_screen.dart';
 
 class LearnScreen extends StatelessWidget {
   const LearnScreen({super.key});
@@ -280,19 +281,12 @@ class LearnScreen extends StatelessWidget {
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
-        onTap: () async {
-          // Show ad before starting lesson
-          final adShown = await appProvider.showLessonAd();
-
-          await appProvider.completeLesson(lesson.id);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                adShown
-                    ? 'Lesson completed! +${lesson.coinReward + 5} coins (with ad bonus)'
-                    : 'Lesson completed! +${lesson.coinReward} coins',
-              ),
-              backgroundColor: Colors.green,
+        onTap: () {
+          // Navigate to lesson detail screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => LessonDetailScreen(lesson: lesson),
             ),
           );
         },
