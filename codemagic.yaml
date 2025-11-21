@@ -18,8 +18,13 @@ workflows:
       branch_patterns:
         - pattern: "main"
     scripts:
-      - name: Install dependencies
+      - name: Install Flutter dependencies
         script: flutter pub get
+      - name: Install CocoaPods dependencies
+        script: |
+          cd ios
+          pod install
+          cd ..
       - name: Clean project
         script: flutter clean
       - name: Set up code signing settings on Xcode project
