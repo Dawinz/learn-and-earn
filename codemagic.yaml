@@ -5,8 +5,6 @@ workflows:
     environment:
       flutter: stable
       xcode: latest
-      vars:
-        FLUTTER_PROJECT_PATH: "learn_earn_mobile"
     triggering:
       events:
         - push
@@ -14,19 +12,13 @@ workflows:
         - pattern: "main"
     scripts:
       - name: Install dependencies
-        script: |
-          cd $FLUTTER_PROJECT_PATH
-          flutter pub get
+        script: flutter pub get
       - name: Clean project
-        script: |
-          cd $FLUTTER_PROJECT_PATH
-          flutter clean
+        script: flutter clean
       - name: Build iOS
-        script: |
-          cd $FLUTTER_PROJECT_PATH
-          flutter build ipa --release --no-codesign
+        script: flutter build ipa --release --no-codesign
     artifacts:
-      - $FLUTTER_PROJECT_PATH/build/ios/ipa/*.ipa
+      - build/ios/ipa/*.ipa
     publishing:
       email:
         recipients:

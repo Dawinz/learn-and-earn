@@ -1,160 +1,45 @@
-# Environment variables
-.env
-.env.local
-.env.production
-.env.development
-
-# MCP Configuration (contains secrets)
-.cursor-mcp.json
-
-# Node modules
-node_modules/
-*/node_modules/
-
-# Build outputs
-dist/
-build/
-*/dist/
-*/build/
-
-# Logs
+# Miscellaneous
+*.class
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
 
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
 
-# Coverage directory used by tools like istanbul
-coverage/
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
 
-# nyc test coverage
-.nyc_output
-
-# Dependency directories
-jspm_packages/
-
-# Optional npm cache directory
-.npm
-
-# Optional REPL history
-.node_repl_history
-
-# Output of 'npm pack'
-*.tgz
-
-# Yarn Integrity file
-.yarn-integrity
-
-# dotenv environment variables file
-.env
-
-# parcel-bundler cache (https://parceljs.org/)
-.cache
-.parcel-cache
-
-# next.js build output
-.next
-
-# nuxt.js build output
-.nuxt
-
-# vuepress build output
-.vuepress/dist
-
-# Serverless directories
-.serverless
-
-# FuseBox cache
-.fusebox/
-
-# DynamoDB Local files
-.dynamodb/
-
-# TernJS port file
-.tern-port
-
-# Flutter/Dart
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
-.packages
 .pub-cache/
 .pub/
-build/
+/build/
 
-# Android
-**/android/**/gradle-wrapper.jar
-**/android/.gradle
-**/android/captures/
-**/android/gradlew
-**/android/gradlew.bat
-**/android/local.properties
-**/android/**/GeneratedPluginRegistrant.java
+# Symbolication related
+app.*.symbols
 
-# iOS
-**/ios/**/*.mode1v3
-**/ios/**/*.mode2v3
-**/ios/**/*.moved-aside
-**/ios/**/*.pbxuser
-**/ios/**/*.perspectivev3
-**/ios/**/*sync/
-**/ios/**/.sconsign.dblite
-**/ios/**/.tags*
-**/ios/**/.vagrant/
-**/ios/**/DerivedData/
-**/ios/**/Icon?
-**/ios/**/Pods/
-**/ios/**/.symlinks/
-**/ios/**/profile
-**/ios/**/xcuserdata
-**/ios/.generated/
-**/ios/Flutter/App.framework
-**/ios/Flutter/Flutter.framework
-**/ios/Flutter/Flutter.podspec
-**/ios/Flutter/Generated.xcconfig
-**/ios/Flutter/ephemeral/
-**/ios/Flutter/app.flx
-**/ios/Flutter/app.zip
-**/ios/Flutter/flutter_assets/
-**/ios/Flutter/flutter_export_environment.sh
-**/ios/ServiceDefinitions.json
-**/ios/Runner/GeneratedPluginRegistrant.*
+# Obfuscation related
+app.*.map.json
 
-# macOS
-**/macos/Flutter/GeneratedPluginRegistrant.swift
-
-# Windows
-**/windows/flutter/generated_plugin_registrant.cc
-**/windows/flutter/generated_plugin_registrant.h
-
-# Linux
-**/linux/flutter/generated_plugin_registrant.cc
-**/linux/flutter/generated_plugin_registrant.h
-
-# Web
-**/web/flutter_service_worker.js
-**/web/flutter.js
-**/web/flutter_bootstrap.js
-**/web/canvaskit/
-**/web/icons/
-**/web/manifest.json
-
-# Backup files
-*.backup
-*.bak
-*_backup/
-*_backup_*/
-
-# Build artifacts (root level)
-*.aab
-*.apk
-*.ipa
-
-# Temporary files
-screenshot.png
-*.tmp
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
