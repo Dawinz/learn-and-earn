@@ -40,15 +40,11 @@ workflows:
         notify:
           success: true
           failure: false
-      app_store_connect:
-        auth: integration
-        
-        # Optional: Submit for review after successful build
-        submit_to_testflight: false
-        submit_to_app_store: false
-        
-        # Optional: Beta groups for TestFlight
-        # beta_groups:
-        #   - group name 1
-        #   - group name 2
+      # App Store Connect publishing is DISABLED
+      # The IPA will be built and available for download, but NOT uploaded to App Store
+      # Uncomment the section below if you want to enable automatic upload later
+      # app_store_connect:
+      #   auth: integration
+      #   submit_to_testflight: false
+      #   submit_to_app_store: false
 
