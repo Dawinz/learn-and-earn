@@ -22,6 +22,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
   BannerAd? _bannerAd;
   bool _isAdLoaded = false;
   bool _isAdFailed = false;
+  bool _isDisposed = false;
 
   @override
   void initState() {
@@ -30,29 +31,35 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
   }
 
   void _loadBannerAd() {
+    // Dispose previous ad if exists
+    _bannerAd?.dispose();
+    
     _bannerAd = AdService.instance.createBannerAd();
-    _bannerAd!
-        .load()
-        .then((_) {
-          if (mounted) {
-            setState(() {
-              _isAdLoaded = true;
-              _isAdFailed = false;
-            });
-          }
-        })
-        .catchError((error) {
-          if (mounted) {
-            setState(() {
-              _isAdLoaded = false;
-              _isAdFailed = true;
-            });
-          }
+    
+    // Update listener to check if widget is still mounted
+    _bannerAd!.load().then((_) {
+      if (mounted && !_isDisposed) {
+        setState(() {
+          _isAdLoaded = true;
+          _isAdFailed = false;
         });
+      } else {
+        _bannerAd?.dispose();
+      }
+    }).catchError((error) {
+      if (mounted && !_isDisposed) {
+        setState(() {
+          _isAdLoaded = false;
+          _isAdFailed = true;
+        });
+      }
+      _bannerAd?.dispose();
+    });
   }
 
   @override
   void dispose() {
+    _isDisposed = true;
     _bannerAd?.dispose();
     super.dispose();
   }
@@ -119,7 +126,9 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
                 bottomLeft: Radius.circular(8),
                 bottomRight: Radius.circular(8),
               ),
-              child: AdWidget(ad: _bannerAd!),
+              child: _bannerAd != null && _isAdLoaded && !_isDisposed
+                  ? AdWidget(ad: _bannerAd!)
+                  : const SizedBox.shrink(),
             ),
           ),
         ],

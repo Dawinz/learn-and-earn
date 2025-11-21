@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
 import '../services/ad_service.dart';
-import '../constants/app_constants.dart';
 import '../widgets/banner_ad_widget.dart';
 import 'learn_screen.dart';
-import 'earn_screen.dart';
+import 'progress_screen.dart';
 import 'quiz_screen.dart';
-import 'wallet_screen.dart';
 import 'status_screen.dart';
 import 'leaderboard_screen.dart';
 
@@ -78,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       builder: (context, appProvider, child) {
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Learn & Earn'),
+            title: const Text('Learn & Grow'),
             backgroundColor: const Color(0xFF2196F3),
             foregroundColor: Colors.white,
             centerTitle: true,
@@ -177,20 +175,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                           ),
                                           const SizedBox(width: 8),
                                           Text(
-                                            '${appProvider.coins} Coins',
+                                            '${appProvider.xp} XP',
                                             style: const TextStyle(
                                               fontSize: 18,
                                               fontWeight: FontWeight.bold,
                                               color: Colors.white,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            '≈ ${AppConstants.formatCashShort(AppConstants.coinsToCash(appProvider.coins))}',
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
-                                              color: Colors.white70,
                                             ),
                                           ),
                                         ],
@@ -252,7 +241,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                         ),
                                         const SizedBox(height: 4),
                                         const Text(
-                                          'All lessons are now available again. Complete them to earn more coins!',
+                                          'All lessons are now available again. Complete them to earn more XP!',
                                           style: TextStyle(
                                             fontSize: 14,
                                             color: Colors.white70,
@@ -354,28 +343,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                         _buildActionButton(
                           context,
-                          'Earn',
-                          Icons.monetization_on_rounded,
+                          'Progress',
+                          Icons.auto_graph_rounded,
                           Colors.orange,
                           () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const EarnScreen(),
+                                builder: (context) => const ProgressScreen(),
                               ),
                             );
                           },
                         ),
                         _buildActionButton(
                           context,
-                          'Wallet',
-                          Icons.account_balance_wallet_rounded,
+                          'Leaderboard',
+                          Icons.emoji_events_rounded,
                           Colors.blue,
                           () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const WalletScreen(),
+                                builder: (context) => const LeaderboardScreen(),
                               ),
                             );
                           },
@@ -417,13 +406,93 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: _buildProgressItem(
-                                    'Coins Earned',
-                                    '${appProvider.transactions.where((t) => t.type == 'earned').fold(0, (sum, t) => sum + t.amount)}',
-                                    Icons.monetization_on,
+                                    'XP Earned Today',
+                                    '${appProvider.transactions.where((t) => (t.type == 'earned' || t.type == 'credit') && _isToday(t.timestamp)).fold(0, (sum, t) => sum + t.amount)}',
+                                    Icons.star,
                                     Colors.amber,
                                   ),
                                 ),
                               ],
+                            ),
+                            const SizedBox(height: 16),
+                            // Learning Streak Card
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.orange.shade400,
+                                    Colors.red.shade400,
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.orange.withOpacity(0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    appProvider.learningStreak >= 7
+                                        ? Icons.local_fire_department
+                                        : Icons.local_fire_department_outlined,
+                                    color: Colors.white,
+                                    size: 32,
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Learning Streak',
+                                          style: TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          appProvider.learningStreak == 0
+                                              ? 'Start your streak!'
+                                              : '${appProvider.learningStreak} ${appProvider.learningStreak == 1 ? 'day' : 'days'} 🔥',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (appProvider.learningStreak > 0)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Text(
+                                        '${appProvider.learningStreak}',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 18,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -507,7 +576,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: Text(
-                                    'Your Rank: #${_getUserRank(appProvider.coins)}',
+                                    'Your Rank: #${_getUserRank(appProvider.xp)}',
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
@@ -526,7 +595,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: Text(
-                                    '${appProvider.coins} coins',
+                                    '${appProvider.xp} XP',
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
@@ -633,23 +702,30 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  int _getUserRank(int userCoins) {
+  bool _isToday(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final dateOnly = DateTime(date.year, date.month, date.day);
+    return dateOnly.isAtSameMomentAs(today);
+  }
+
+  int _getUserRank(int userXp) {
     // Mock leaderboard data - in real app, this would come from backend
     final leaderboardData = [
-      {'coins': 15420},
-      {'coins': 12850},
-      {'coins': 11200},
-      {'coins': 9850},
-      {'coins': 8750},
-      {'coins': 7200},
-      {'coins': 6800},
-      {'coins': 5900},
-      {'coins': 5200},
-      {'coins': 4800},
+      {'xp': 15420},
+      {'xp': 12850},
+      {'xp': 11200},
+      {'xp': 9850},
+      {'xp': 8750},
+      {'xp': 7200},
+      {'xp': 6800},
+      {'xp': 5900},
+      {'xp': 5200},
+      {'xp': 4800},
     ];
 
     for (int i = 0; i < leaderboardData.length; i++) {
-      if (userCoins >= (leaderboardData[i]['coins'] as int)) {
+      if (userXp >= (leaderboardData[i]['xp'] as int)) {
         return i + 1;
       }
     }

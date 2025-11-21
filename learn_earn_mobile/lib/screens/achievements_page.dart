@@ -31,7 +31,7 @@ class AchievementsPage extends StatelessWidget {
             'unlocked': completedLessons >= 1,
             'progress': completedLessons,
             'target': 1,
-            'reward': '10 coins',
+            'reward': '10 xp',
           },
           {
             'title': 'Quiz Master',
@@ -41,7 +41,7 @@ class AchievementsPage extends StatelessWidget {
             'unlocked': quizCompletions >= 5,
             'progress': quizCompletions,
             'target': 5,
-            'reward': '50 coins',
+            'reward': '50 xp',
           },
           {
             'title': 'Ad Watcher',
@@ -51,17 +51,17 @@ class AchievementsPage extends StatelessWidget {
             'unlocked': adViews >= 10,
             'progress': adViews,
             'target': 10,
-            'reward': '25 coins',
+            'reward': '25 xp',
           },
           {
             'title': 'Coin Collector',
-            'description': 'Earn 1000 coins',
+            'description': 'Earn 1000 xp',
             'icon': Icons.monetization_on,
             'color': Colors.amber,
             'unlocked': totalEarned >= 1000,
             'progress': totalEarned,
             'target': 1000,
-            'reward': '100 coins',
+            'reward': '100 xp',
           },
           {
             'title': 'Learning Streak',
@@ -71,7 +71,7 @@ class AchievementsPage extends StatelessWidget {
             'unlocked': false, // This would need actual streak tracking
             'progress': 3,
             'target': 7,
-            'reward': '200 coins',
+            'reward': '200 xp',
           },
           {
             'title': 'Lesson Expert',
@@ -81,7 +81,7 @@ class AchievementsPage extends StatelessWidget {
             'unlocked': completedLessons >= 10,
             'progress': completedLessons,
             'target': 10,
-            'reward': '150 coins',
+            'reward': '150 xp',
           },
           {
             'title': 'Quiz Champion',
@@ -91,7 +91,7 @@ class AchievementsPage extends StatelessWidget {
             'unlocked': quizCompletions >= 20,
             'progress': quizCompletions,
             'target': 20,
-            'reward': '300 coins',
+            'reward': '300 xp',
           },
           {
             'title': 'Ad Enthusiast',
@@ -101,7 +101,7 @@ class AchievementsPage extends StatelessWidget {
             'unlocked': adViews >= 50,
             'progress': adViews,
             'target': 50,
-            'reward': '100 coins',
+            'reward': '100 xp',
           },
         ];
 
@@ -396,7 +396,7 @@ class AchievementsPage extends StatelessWidget {
                         const Text(
                           '• Complete lessons daily to maintain your learning streak\n'
                           '• Take quizzes regularly to improve your knowledge\n'
-                          '• Watch ads to earn extra coins and unlock achievements\n'
+                          '• Watch ads to earn extra xp and unlock achievements\n'
                           '• Check back daily for new earning opportunities',
                           style: TextStyle(fontSize: 14, height: 1.5),
                         ),

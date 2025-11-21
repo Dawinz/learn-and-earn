@@ -10,44 +10,73 @@ class AdService {
   static AdService get instance => _instance ??= AdService._();
   AdService._();
 
-  // Ad Unit IDs - Production AdMob unit IDs from README.md
+  // Ad Unit IDs - Learn & Grow App AdMob unit IDs
+
+  // 1. Banner Ad
   static String get _bannerAdUnitId => Platform.isAndroid
-      ? 'ca-app-pub-6181092189054832/8525426424' // Android Banner (320×50)
-      : 'ca-app-pub-6181092189054832/1900308326'; // iOS Banner (320×50)
+      ? 'ca-app-pub-6181092189054832/6010463479' // Android Banner
+      : 'ca-app-pub-6181092189054832/9566565106'; // iOS Banner
 
+  // 2. Interstitial Ad
   static String get _interstitialAdUnitId => Platform.isAndroid
-      ? 'ca-app-pub-6181092189054832/5074116633' // Android Interstitial
-      : 'ca-app-pub-6181092189054832/4471481405'; // iOS Interstitial
+      ? 'ca-app-pub-6181092189054832/1061389126' // Android Interstitial
+      : 'ca-app-pub-6181092189054832/8417134960'; // iOS Interstitial
 
+  // 3. Rewarded Interstitial Ad
+  static String get _rewardedInterstitialAdUnitId => Platform.isAndroid
+      ? 'ca-app-pub-6181092189054832/8608706658' // Android Rewarded Interstitial
+      : 'ca-app-pub-6181092189054832/8890125294'; // iOS Rewarded Interstitial
+
+  // 4. Rewarded Ad
   static String get _rewardedAdUnitId => Platform.isAndroid
-      ? 'ca-app-pub-6181092189054832/8716998116' // Android Rewarded Video (+15 coins)
-      : 'ca-app-pub-6181092189054832/5470504786'; // iOS Rewarded Video (+15 coins)
+      ? 'ca-app-pub-6181092189054832/2332455800' // Android Rewarded
+      : 'ca-app-pub-6181092189054832/5627320093'; // iOS Rewarded
 
-  // Native Ad Unit IDs (for future use)
-  static String get _nativeAdUnitId => Platform.isAndroid
-      ? 'ca-app-pub-6181092189054832/4586181410' // Android Native
-      : 'ca-app-pub-6181092189054832/2360323384'; // iOS Native
+  // 5. Native Advanced Ad
+  static String get nativeAdUnitId => Platform.isAndroid
+      ? 'ca-app-pub-6181092189054832/3689769508' // Android Native Advanced
+      : 'ca-app-pub-6181092189054832/6263961957'; // iOS Native Advanced
+
+  // 6. App Open Ad
+  static String get _appOpenAdUnitId => Platform.isAndroid
+      ? 'ca-app-pub-6181092189054832/3721559099' // Android App Open
+      : 'ca-app-pub-6181092189054832/6080129122'; // iOS App Open
 
   bool _isInitialized = false;
   InterstitialAd? _interstitialAd;
+  RewardedInterstitialAd? _rewardedInterstitialAd;
   RewardedAd? _rewardedAd;
+  AppOpenAd? _appOpenAd;
   bool _isInterstitialAdReady = false;
+  bool _isRewardedInterstitialAdReady = false;
   bool _isRewardedAdReady = false;
+  bool _isAppOpenAdReady = false;
 
   // Initialize AdMob
   Future<void> initialize() async {
     if (_isInitialized) return;
 
     try {
+      // Configure RequestConfiguration for 13+ audience (not child-directed)
+      final requestConfiguration = RequestConfiguration(
+        tagForChildDirectedTreatment: TagForChildDirectedTreatment.no,
+        tagForUnderAgeOfConsent: TagForUnderAgeOfConsent.no,
+        maxAdContentRating: MaxAdContentRating.pg,
+        testDeviceIds: kDebugMode ? ['YOUR_TEST_DEVICE_ID_HERE'] : [],
+      );
+      MobileAds.instance.updateRequestConfiguration(requestConfiguration);
+
       await MobileAds.instance.initialize();
       _isInitialized = true;
 
       // Load initial ads
       _loadInterstitialAd();
+      _loadRewardedInterstitialAd();
       _loadRewardedAd();
+      _loadAppOpenAd();
 
       if (kDebugMode) {
-        print('AdMob initialized successfully');
+        print('AdMob initialized successfully with 13+ audience configuration');
       }
     } catch (e) {
       if (kDebugMode) {
@@ -70,9 +99,12 @@ class AdService {
         },
         onAdFailedToLoad: (ad, error) {
           if (kDebugMode) {
-            print('Banner ad failed to load: $error');
+            // Only log significant errors, ignore common simulator issues
+            if (error.code != 1 && error.code != 5) {
+              print('Banner ad failed to load: $error');
+            }
           }
-          ad.dispose();
+          // Don't dispose here - let the widget handle disposal
         },
         onAdOpened: (ad) {
           if (kDebugMode) {
@@ -82,6 +114,11 @@ class AdService {
         onAdClosed: (ad) {
           if (kDebugMode) {
             print('Banner ad closed');
+          }
+        },
+        onAdImpression: (ad) {
+          if (kDebugMode) {
+            print('Banner ad impression recorded');
           }
         },
       ),
@@ -257,9 +294,158 @@ class AdService {
     }
   }
 
+  // Load Rewarded Interstitial Ad
+  void _loadRewardedInterstitialAd() {
+    RewardedInterstitialAd.load(
+      adUnitId: _rewardedInterstitialAdUnitId,
+      request: const AdRequest(),
+      rewardedInterstitialAdLoadCallback: RewardedInterstitialAdLoadCallback(
+        onAdLoaded: (ad) {
+          _rewardedInterstitialAd = ad;
+          _isRewardedInterstitialAdReady = true;
+
+          _rewardedInterstitialAd!
+              .fullScreenContentCallback = FullScreenContentCallback(
+            onAdShowedFullScreenContent: (ad) {
+              if (kDebugMode) {
+                print('Rewarded interstitial ad showed full screen content');
+              }
+            },
+            onAdDismissedFullScreenContent: (ad) {
+              if (kDebugMode) {
+                print('Rewarded interstitial ad dismissed');
+              }
+              ad.dispose();
+              _isRewardedInterstitialAdReady = false;
+              _loadRewardedInterstitialAd(); // Load next ad
+            },
+            onAdFailedToShowFullScreenContent: (ad, error) {
+              if (kDebugMode) {
+                print('Rewarded interstitial ad failed to show: $error');
+              }
+              ad.dispose();
+              _isRewardedInterstitialAdReady = false;
+              _loadRewardedInterstitialAd(); // Load next ad
+            },
+          );
+
+          if (kDebugMode) {
+            print('Rewarded interstitial ad loaded');
+          }
+        },
+        onAdFailedToLoad: (error) {
+          if (kDebugMode) {
+            print('Rewarded interstitial ad failed to load: $error');
+          }
+          _isRewardedInterstitialAdReady = false;
+        },
+      ),
+    );
+  }
+
+  // Show Rewarded Interstitial Ad
+  Future<RewardItem?> showRewardedInterstitialAd() async {
+    if (!_isRewardedInterstitialAdReady || _rewardedInterstitialAd == null) {
+      if (kDebugMode) {
+        print('Rewarded interstitial ad not ready');
+      }
+      return null;
+    }
+
+    try {
+      RewardItem? reward;
+      await _rewardedInterstitialAd!.show(
+        onUserEarnedReward: (ad, rewardItem) {
+          reward = rewardItem;
+          if (kDebugMode) {
+            print(
+              'User earned reward from rewarded interstitial: ${rewardItem.amount} ${rewardItem.type}',
+            );
+          }
+        },
+      );
+      return reward;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Failed to show rewarded interstitial ad: $e');
+      }
+      return null;
+    }
+  }
+
+  // Load App Open Ad
+  void _loadAppOpenAd() {
+    AppOpenAd.load(
+      adUnitId: _appOpenAdUnitId,
+      request: const AdRequest(),
+      adLoadCallback: AppOpenAdLoadCallback(
+        onAdLoaded: (ad) {
+          _appOpenAd = ad;
+          _isAppOpenAdReady = true;
+
+          _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
+            onAdShowedFullScreenContent: (ad) {
+              if (kDebugMode) {
+                print('App open ad showed full screen content');
+              }
+            },
+            onAdDismissedFullScreenContent: (ad) {
+              if (kDebugMode) {
+                print('App open ad dismissed');
+              }
+              ad.dispose();
+              _isAppOpenAdReady = false;
+              _loadAppOpenAd(); // Load next ad
+            },
+            onAdFailedToShowFullScreenContent: (ad, error) {
+              if (kDebugMode) {
+                print('App open ad failed to show: $error');
+              }
+              ad.dispose();
+              _isAppOpenAdReady = false;
+              _loadAppOpenAd(); // Load next ad
+            },
+          );
+
+          if (kDebugMode) {
+            print('App open ad loaded');
+          }
+        },
+        onAdFailedToLoad: (error) {
+          if (kDebugMode) {
+            print('App open ad failed to load: $error');
+          }
+          _isAppOpenAdReady = false;
+        },
+      ),
+    );
+  }
+
+  // Show App Open Ad
+  Future<bool> showAppOpenAd() async {
+    if (!_isAppOpenAdReady || _appOpenAd == null) {
+      if (kDebugMode) {
+        print('App open ad not ready');
+      }
+      return false;
+    }
+
+    try {
+      await _appOpenAd!.show();
+      return true;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Failed to show app open ad: $e');
+      }
+      return false;
+    }
+  }
+
   // Check if ads are ready
   bool get isInterstitialAdReady => _isInterstitialAdReady;
+  bool get isRewardedInterstitialAdReady => _isRewardedInterstitialAdReady;
   bool get isRewardedAdReady => _isRewardedAdReady;
+  bool get isAppOpenAdReady => _isAppOpenAdReady;
 
   // Static methods for backward compatibility
 
@@ -275,6 +461,8 @@ class AdService {
   // Dispose resources
   void dispose() {
     _interstitialAd?.dispose();
+    _rewardedInterstitialAd?.dispose();
     _rewardedAd?.dispose();
+    _appOpenAd?.dispose();
   }
 }

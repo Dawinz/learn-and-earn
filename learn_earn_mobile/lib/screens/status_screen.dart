@@ -27,7 +27,8 @@ class _StatusScreenState extends State<StatusScreen> {
     });
 
     try {
-      final isOnline = await ApiService.checkHealth();
+      final healthResult = await ApiService.checkHealth();
+      final isOnline = healthResult['success'] == true;
       setState(() {
         _backendOnline = isOnline;
         _statusMessage = isOnline

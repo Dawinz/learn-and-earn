@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
-import '../constants/app_constants.dart';
 import '../services/ad_service.dart';
 
 class LeaderboardScreen extends StatefulWidget {
@@ -103,9 +102,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                                   color: Colors.white.withOpacity(0.2),
                                   borderRadius: BorderRadius.circular(25),
                                 ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: _periods.map((period) {
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: _periods.map((period) {
                                     final isSelected =
                                         period == _selectedPeriod;
                                     return GestureDetector(
@@ -141,6 +142,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                                       ),
                                     );
                                   }).toList(),
+                                  ),
                                 ),
                               ),
                             ],
@@ -196,7 +198,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    '#${_getUserRank(appProvider.coins)}',
+                                    '#${_getUserRank(appProvider.xp)}',
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 24,
@@ -205,7 +207,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    '${appProvider.coins} coins (${AppConstants.formatCashShort(AppConstants.coinsToCash(appProvider.coins))})',
+                                    '${appProvider.xp} XP',
                                     style: const TextStyle(
                                       color: Colors.white70,
                                       fontSize: 14,
@@ -252,7 +254,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            ..._buildLeaderboardList(appProvider.coins),
+                            ..._buildLeaderboardList(appProvider.xp),
                           ],
                         ),
                       ),
@@ -277,14 +279,14 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     );
   }
 
-  List<Widget> _buildLeaderboardList(int userCoins) {
+  List<Widget> _buildLeaderboardList(int userXP) {
     // Mock leaderboard data - in real app, this would come from backend
     final leaderboardData = _getMockLeaderboardData();
 
     return leaderboardData.asMap().entries.map((entry) {
       final index = entry.key;
       final user = entry.value;
-      final isCurrentUser = user['coins'] == userCoins;
+      final isCurrentUser = user['xp'] == userXP;
 
       return Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -373,7 +375,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${user['coins']} coins (${AppConstants.formatCashShort(AppConstants.coinsToCash(user['coins']))})',
+                        '${user['xp']} XP',
                         style: TextStyle(
                           fontSize: 14,
                           color: isCurrentUser
@@ -413,23 +415,23 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   List<Map<String, dynamic>> _getMockLeaderboardData() {
     // Mock data - in real app, this would come from backend API
     return [
-      {'name': 'Alex Johnson', 'coins': 15420, 'lessons': 28},
-      {'name': 'Sarah Chen', 'coins': 12850, 'lessons': 24},
-      {'name': 'Mike Rodriguez', 'coins': 11200, 'lessons': 22},
-      {'name': 'Emma Wilson', 'coins': 9850, 'lessons': 20},
-      {'name': 'David Kim', 'coins': 8750, 'lessons': 18},
-      {'name': 'Lisa Brown', 'coins': 7200, 'lessons': 16},
-      {'name': 'James Taylor', 'coins': 6800, 'lessons': 15},
-      {'name': 'Anna Garcia', 'coins': 5900, 'lessons': 14},
-      {'name': 'Tom Anderson', 'coins': 5200, 'lessons': 13},
-      {'name': 'Maria Lopez', 'coins': 4800, 'lessons': 12},
+      {'name': 'Alex Johnson', 'xp': 15420, 'lessons': 28},
+      {'name': 'Sarah Chen', 'xp': 12850, 'lessons': 24},
+      {'name': 'Mike Rodriguez', 'xp': 11200, 'lessons': 22},
+      {'name': 'Emma Wilson', 'xp': 9850, 'lessons': 20},
+      {'name': 'David Kim', 'xp': 8750, 'lessons': 18},
+      {'name': 'Lisa Brown', 'xp': 7200, 'lessons': 16},
+      {'name': 'James Taylor', 'xp': 6800, 'lessons': 15},
+      {'name': 'Anna Garcia', 'xp': 5900, 'lessons': 14},
+      {'name': 'Tom Anderson', 'xp': 5200, 'lessons': 13},
+      {'name': 'Maria Lopez', 'xp': 4800, 'lessons': 12},
     ];
   }
 
-  int _getUserRank(int userCoins) {
+  int _getUserRank(int userXP) {
     final leaderboardData = _getMockLeaderboardData();
     for (int i = 0; i < leaderboardData.length; i++) {
-      if (userCoins >= leaderboardData[i]['coins']) {
+      if (userXP >= leaderboardData[i]['xp']) {
         return i + 1;
       }
     }

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
 import '../services/ad_service.dart';
+import '../services/auth_service.dart';
+import '../services/api_service.dart';
+import 'email_verification_screen.dart';
 import 'statistics_page.dart';
 import 'achievements_page.dart';
 import 'settings_page.dart';
@@ -94,16 +97,34 @@ class ProfileScreen extends StatelessWidget {
 
                               // User Info
                               Text(
-                                appProvider.user?.name ?? 'Learn & Earn User',
+                                appProvider.user?.name ?? 'Learn & Grow User',
                                 style: const TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
                                 ),
                               ),
+                              const SizedBox(height: 4),
+                              if (appProvider.user?.email != null &&
+                                  appProvider.user!.email.isNotEmpty)
+                                Text(
+                                  appProvider.user!.email,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.white70,
+                                  ),
+                                )
+                              else
+                                const Text(
+                                  'Guest User - Link email to sync',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.white70,
+                                  ),
+                                ),
                               const SizedBox(height: 8),
                               Text(
-                                'Level ${_calculateLevel(appProvider.coins)} Learner',
+                                'Level ${_calculateLevel(appProvider.xp)} Learner',
                                 style: const TextStyle(
                                   fontSize: 16,
                                   color: Colors.white70,
@@ -117,9 +138,9 @@ class ProfileScreen extends StatelessWidget {
                                     MainAxisAlignment.spaceEvenly,
                                 children: [
                                   _buildStatCard(
-                                    'Coins',
-                                    '${appProvider.coins}',
-                                    Icons.monetization_on,
+                                    'XP',
+                                    '${appProvider.xp}',
+                                    Icons.stars,
                                     Colors.amber,
                                   ),
                                   _buildStatCard(
@@ -211,6 +232,76 @@ class ProfileScreen extends StatelessWidget {
 
                       const SizedBox(height: 24),
 
+                      // Email Linking Section (if email not linked)
+                      // Use FutureBuilder to check email from backend
+                      FutureBuilder<String?>(
+                        future: _checkEmailLinked(appProvider),
+                        builder: (context, snapshot) {
+                          final emailLinked = snapshot.data ?? appProvider.user?.email;
+                          
+                          if (emailLinked == null || emailLinked.isEmpty) {
+                            return Card(
+                              elevation: 4,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              margin: const EdgeInsets.symmetric(horizontal: 16.0),
+                              child: Padding(
+                                padding: const EdgeInsets.all(20.0),
+                                child: Column(
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.email_outlined,
+                                          color: const Color(0xFF2196F3),
+                                          size: 24,
+                                        ),
+                                        const SizedBox(width: 12),
+                                        const Expanded(
+                                          child: Text(
+                                            'Link Your Email',
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    const Text(
+                                      'Link your email to sync your progress across devices and recover your account if needed.',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    ElevatedButton.icon(
+                                      onPressed: () => _showLinkEmailDialog(
+                                        context,
+                                        appProvider,
+                                      ),
+                                      icon: const Icon(Icons.link),
+                                      label: const Text('Link Email'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFF2196F3),
+                                        foregroundColor: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          } else {
+                            return const SizedBox.shrink();
+                          }
+                        },
+                      ),
+
+                      const SizedBox(height: 24),
+
                       // Profile Options
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -257,12 +348,6 @@ class ProfileScreen extends StatelessWidget {
                               subtitle: 'Track your journey',
                               onTap: () =>
                                   _showLearningHistory(context, appProvider),
-                            ),
-                            _buildProfileOption(
-                              icon: Icons.account_balance_wallet,
-                              title: 'Wallet',
-                              subtitle: 'Manage your coins and transactions',
-                              onTap: () => _showWallet(context, appProvider),
                             ),
                             _buildProfileOption(
                               icon: Icons.settings,
@@ -391,8 +476,8 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  int _calculateLevel(int coins) {
-    return (coins / 100).floor() + 1;
+  int _calculateLevel(int xp) {
+    return (xp / 100).floor() + 1;
   }
 
   void _showSettingsDialog(BuildContext context) {
@@ -530,90 +615,6 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  void _showWallet(BuildContext context, AppProvider appProvider) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Wallet'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Balance Card
-              Card(
-                elevation: 4,
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'Your Balance',
-                        style: TextStyle(fontSize: 18, color: Colors.grey),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${appProvider.coins}',
-                        style: const TextStyle(
-                          fontSize: 36,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF2196F3),
-                        ),
-                      ),
-                      const Text(
-                        'Coins',
-                        style: TextStyle(fontSize: 16, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Recent Transactions
-              const Text(
-                'Recent Transactions',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 200,
-                child: ListView.builder(
-                  itemCount: appProvider.transactions.take(5).length,
-                  itemBuilder: (context, index) {
-                    final transaction = appProvider.transactions[index];
-                    final isEarned = transaction.type == 'earned';
-                    return ListTile(
-                      leading: Icon(
-                        isEarned ? Icons.add_circle : Icons.remove_circle,
-                        color: isEarned ? Colors.green : Colors.red,
-                        size: 24,
-                      ),
-                      title: Text(transaction.title),
-                      subtitle: Text(transaction.formattedTime),
-                      trailing: Text(
-                        '${isEarned ? '+' : ''}${transaction.amount}',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: isEarned ? Colors.green : Colors.red,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _showLogoutDialog(BuildContext context, AppProvider appProvider) {
     showDialog(
@@ -637,6 +638,153 @@ class ProfileScreen extends StatelessWidget {
             child: const Text('Logout', style: TextStyle(color: Colors.red)),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<String?> _checkEmailLinked(AppProvider appProvider) async {
+    try {
+      // Check user profile from backend to see if email is linked
+      final result = await ApiService.getMe();
+      if (result['success'] == true && result['profile'] != null) {
+        final email = result['profile']['email'];
+        if (email != null && email.isNotEmpty) {
+          // Update app provider with email
+          final currentUser = appProvider.user;
+          if (currentUser != null) {
+            final updatedUser = currentUser.copyWith(email: email);
+            await appProvider.setUser(updatedUser);
+          }
+          return email;
+        }
+      }
+      return null;
+    } catch (e) {
+      print('Error checking email: $e');
+      return appProvider.user?.email;
+    }
+  }
+
+  void _showLinkEmailDialog(BuildContext context, AppProvider appProvider) {
+    final emailController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    bool isLoading = false;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Link Your Email'),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Link your email to sync your progress across devices and recover your account.',
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    labelText: 'Email Address',
+                    hintText: 'your.email@example.com',
+                    prefixIcon: Icon(Icons.email_outlined),
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your email';
+                    }
+                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                        .hasMatch(value)) {
+                      return 'Please enter a valid email';
+                    }
+                    return null;
+                  },
+                  enabled: !isLoading,
+                ),
+                if (isLoading) ...[
+                  const SizedBox(height: 16),
+                  const CircularProgressIndicator(),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: isLoading
+                  ? null
+                  : () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: isLoading
+                  ? null
+                  : () async {
+                      if (formKey.currentState!.validate()) {
+                        setState(() {
+                          isLoading = true;
+                        });
+
+                        try {
+                          // Close the dialog first
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                          }
+
+                          // Navigate to email verification screen
+                          // The verification screen will automatically send OTP
+                          final verificationResult = await Navigator.of(context).push<bool>(
+                            MaterialPageRoute(
+                              builder: (context) => EmailVerificationScreen(
+                                email: emailController.text.trim(),
+                              ),
+                            ),
+                          );
+
+                              // If verification was successful, refresh user profile
+                              if (verificationResult == true && context.mounted) {
+                                // Refresh user profile to get updated email
+                                final user = await AuthService.getCurrentUser();
+                                if (user != null) {
+                                  await appProvider.setUser(user);
+                                }
+
+                                // Force rebuild to hide email linking section
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Email linked successfully! Your progress will now sync across devices.',
+                                      ),
+                                      backgroundColor: Colors.green,
+                                      duration: Duration(seconds: 3),
+                                    ),
+                                  );
+                                }
+                              }
+                        } catch (e) {
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Error linking email: $e. Email saved locally.',
+                                ),
+                                backgroundColor: Colors.orange,
+                              ),
+                            );
+                          }
+                        }
+                      }
+                    },
+              child: const Text('Link Email'),
+            ),
+          ],
+        ),
       ),
     );
   }

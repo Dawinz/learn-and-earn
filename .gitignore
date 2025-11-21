@@ -143,3 +143,18 @@ build/
 **/web/canvaskit/
 **/web/icons/
 **/web/manifest.json
+
+# Backup files
+*.backup
+*.bak
+*_backup/
+*_backup_*/
+
+# Build artifacts (root level)
+*.aab
+*.apk
+*.ipa
+
+# Temporary files
+screenshot.png
+*.tmp

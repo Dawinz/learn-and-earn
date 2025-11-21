@@ -1,6 +1,6 @@
 # Learn & Earn - Complete Learning Platform
 
-A comprehensive learning platform that rewards users with real money for completing educational content. Built with Flutter (mobile), Node.js/Express (backend), and React (admin panel).
+A comprehensive learning platform that rewards users with real money for completing educational content. Built with Flutter (mobile) and Node.js/Express (backend).
 
 ## 🎯 Project Overview
 
@@ -11,7 +11,6 @@ Learn & Earn teaches practical ways to earn online through AI, freelancing, cont
 ### Components
 - **Mobile App (Flutter)**: Cross-platform mobile application
 - **Backend API (Node.js/Express)**: RESTful API with MongoDB
-- **Admin Panel (React)**: Web-based administration interface
 - **Database (MongoDB)**: Data storage and management
 
 ### Key Features
@@ -19,7 +18,6 @@ Learn & Earn teaches practical ways to earn online through AI, freelancing, cont
 - Anti-abuse measures (emulator/root detection)
 - Sustainable payout system (revenue-based budgeting)
 - AdMob integration for monetization
-- Comprehensive admin dashboard
 
 ## 📁 Project Structure
 
@@ -41,12 +39,6 @@ learn-earn/
 │   │   ├── middleware/        # Authentication & validation
 │   │   ├── utils/             # Helper functions
 │   │   └── scripts/           # Database seeding
-│   └── package.json
-├── learn-earn-admin/           # React admin panel
-│   ├── src/
-│   │   ├── pages/             # Admin pages
-│   │   ├── components/        # Reusable components
-│   │   └── App.tsx
 │   └── package.json
 └── README.md
 ```
@@ -112,25 +104,6 @@ The API will be available at `http://localhost:8080`
    flutter run
    ```
 
-### Admin Panel Setup
-
-1. **Navigate to admin directory**
-   ```bash
-   cd learn-earn-admin
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Start the development server**
-   ```bash
-   npm run dev
-   ```
-
-The admin panel will be available at `http://localhost:5173`
-
 ## 🔧 Configuration
 
 ### Backend Environment Variables
@@ -191,32 +164,6 @@ static const String baseUrl = 'http://your-backend-url/api';
 - Secure payout system
 - Multi-language support (EN/SW)
 
-## 🖥️ Admin Panel Features
-
-### Dashboard
-- Daily budget overview
-- Payout statistics
-- Recent earnings
-- System health monitoring
-
-### Payout Management
-- View all payout requests
-- Approve/reject payouts
-- Set transaction references
-- Filter by status
-
-### Lesson Management
-- Create/edit lessons
-- Publish/unpublish content
-- Manage categories and tags
-- Quiz management
-
-### Settings
-- Economic parameters
-- Security settings
-- AdMob configuration
-- System preferences
-
 ## 🔐 Security Features
 
 ### Device Identity
@@ -273,12 +220,6 @@ cd learn-earn-mobile
 flutter test
 ```
 
-### Admin Panel Testing
-```bash
-cd learn-earn-admin
-npm test
-```
-
 ## 📊 Monitoring & Analytics
 
 ### Key Metrics
@@ -329,11 +270,6 @@ npm test
 - **Interstitial**: Between task navigation screens (with frequency capping)
 - **Banner**: Bottom of task list
 - **Native**: Embedded in task list items
-
-### Admin Panel Deployment
-1. Build for production
-2. Deploy to static hosting (Vercel, Netlify, etc.)
-3. Configure API endpoints
 
 ## 🤝 Contributing
 

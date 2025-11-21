@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import '../models/lesson.dart';
 import '../providers/app_provider.dart';
 import '../services/api_service.dart';
-import '../services/ad_service.dart';
 import '../widgets/banner_ad_widget.dart';
 
 class LessonDetailScreen extends StatefulWidget {
@@ -27,7 +26,6 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
   double _currentScrollPosition = 0.0;
   bool _isLoading = true;
   bool _isSaving = false;
-  Map<String, dynamic>? _progressData;
 
   @override
   void initState() {
@@ -48,38 +46,28 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
     _progressTimer?.cancel();
     _saveTimer?.cancel();
     _adTimer?.cancel();
-    _saveProgress(); // Save one last time before leaving
+    // Save progress without state updates since widget is being disposed
+    _saveProgress(skipStateUpdate: true);
     super.dispose();
   }
 
   /// Load existing progress from backend
   Future<void> _loadProgress() async {
     try {
-      final progress = await ApiService.getLessonProgress(widget.lesson.id);
+      // Note: getLessonProgress doesn't exist in new API
+      // Progress is tracked via updateLessonProgress
+      // For now, we'll start fresh or use local storage
       setState(() {
-        _progressData = progress;
-        _totalReadingTimeSeconds = progress['timeSpentSeconds'] ?? 0;
-        _currentScrollPosition = (progress['scrollPosition'] ?? 0).toDouble();
+        _totalReadingTimeSeconds = 0;
+        _currentScrollPosition = 0.0;
         _isLoading = false;
       });
-
-      // Scroll to last read position after loading
-      if (_currentScrollPosition > 0 && _scrollController.hasClients) {
-        Future.delayed(const Duration(milliseconds: 500), () {
-          final maxScroll = _scrollController.position.maxScrollExtent;
-          final targetPosition = (maxScroll * _currentScrollPosition / 100.0);
-          _scrollController.animateTo(
-            targetPosition,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOut,
-          );
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
         });
       }
-    } catch (e) {
-      print('Error loading progress: $e');
-      setState(() {
-        _isLoading = false;
-      });
     }
   }
 
@@ -114,30 +102,42 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
   }
 
   /// Save progress to backend
-  Future<void> _saveProgress() async {
+  Future<void> _saveProgress({bool skipStateUpdate = false}) async {
     if (_isSaving) return;
 
-    setState(() {
-      _isSaving = true;
-    });
+    // Only update state if widget is still mounted and we're not skipping state updates
+    if (!skipStateUpdate && mounted) {
+      setState(() {
+        _isSaving = true;
+      });
+    }
 
     try {
-      final sessionDuration = DateTime.now().difference(_sessionStartTime!).inSeconds;
+      // Calculate progress percentage based on scroll position
+      double progressPercent = 0.0;
+      if (_scrollController.hasClients) {
+        final maxScroll = _scrollController.position.maxScrollExtent;
+        if (maxScroll > 0) {
+          progressPercent = (_currentScrollPosition / 100.0).clamp(0.0, 1.0) * 100.0;
+        }
+      }
 
       await ApiService.updateLessonProgress(
         lessonId: widget.lesson.id,
-        scrollPosition: _currentScrollPosition,
+        progressPercent: progressPercent,
         timeSpentSeconds: _totalReadingTimeSeconds,
-        sessionStartedAt: _sessionStartTime,
-        sessionEndedAt: DateTime.now(),
-        sessionDuration: sessionDuration,
       );
     } catch (e) {
-      print('Error saving progress: $e');
+      if (mounted && !skipStateUpdate) {
+        // Error saving progress - continue silently
+      }
     } finally {
-      setState(() {
-        _isSaving = false;
-      });
+      // Only update state if widget is still mounted and we're not skipping state updates
+      if (!skipStateUpdate && mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
     }
   }
 
@@ -182,7 +182,12 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
       final adShown = await appProvider.showLessonAd();
 
       // Mark as complete in backend
-      await ApiService.completeLesson(widget.lesson.id);
+      // Send xpReward (coinReward) so backend knows the XP amount for mobile app lessons
+      await ApiService.completeLesson(
+        lessonId: widget.lesson.id,
+        timeSpentSeconds: _totalReadingTimeSeconds,
+        xpReward: widget.lesson.coinReward, // Send XP reward for mobile app local lessons
+      );
 
       // Update local state
       await appProvider.completeLesson(widget.lesson.id);
@@ -192,8 +197,8 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
           SnackBar(
             content: Text(
               adShown
-                  ? 'Lesson completed! +${widget.lesson.coinReward + 5} coins (with ad bonus)'
-                  : 'Lesson completed! +${widget.lesson.coinReward} coins',
+                  ? 'Lesson completed! +${widget.lesson.coinReward + 5} XP (with ad bonus)'
+                  : 'Lesson completed! +${widget.lesson.coinReward} XP',
             ),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 3),
@@ -306,10 +311,10 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
                                     style: const TextStyle(color: Colors.white70),
                                   ),
                                   const SizedBox(width: 16),
-                                  const Icon(Icons.monetization_on, color: Colors.amber, size: 18),
+                                  const Icon(Icons.star, color: Colors.amber, size: 18),
                                   const SizedBox(width: 4),
                                   Text(
-                                    '${widget.lesson.coinReward} coins',
+                                    '${widget.lesson.coinReward} XP',
                                     style: const TextStyle(
                                       color: Colors.amber,
                                       fontWeight: FontWeight.bold,
@@ -412,7 +417,7 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
                               ),
                               child: Text(
                                 _currentScrollPosition >= 80
-                                    ? 'Complete Lesson & Earn ${widget.lesson.coinReward} Coins'
+                                    ? 'Complete Lesson & Earn ${widget.lesson.coinReward} XP'
                                     : 'Read ${(80 - _currentScrollPosition).toInt()}% more to complete',
                                 style: const TextStyle(
                                   fontSize: 16,

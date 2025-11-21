@@ -6,21 +6,38 @@ class AdFrequencyService {
       _instance ??= AdFrequencyService._();
   AdFrequencyService._();
 
-  // Frequency limits (per hour)
-  static const int maxInterstitialAdsPerHour = 3;
+  // Frequency limits (per hour) - Compliant with Google Play Families Policy
+  static const int maxInterstitialAdsPerHour = 2; // Reduced for better UX
   static const int maxRewardedAdsPerHour = 5;
   static const int maxBannerRefreshesPerHour = 10;
+
+  // Minimum time between interstitial ads (in seconds)
+  static const int minSecondsBetweenInterstitials = 120; // 2 minutes minimum
 
   // Keys for SharedPreferences
   static const String _interstitialCountKey = 'interstitial_ad_count';
   static const String _rewardedCountKey = 'rewarded_ad_count';
   static const String _bannerRefreshCountKey = 'banner_refresh_count';
   static const String _lastResetKey = 'ad_frequency_last_reset';
+  static const String _lastInterstitialTimeKey = 'last_interstitial_ad_time';
 
   // Check if we can show an interstitial ad
   Future<bool> canShowInterstitialAd() async {
     final prefs = await SharedPreferences.getInstance();
     final now = DateTime.now();
+
+    // Check time since last interstitial ad
+    final lastInterstitialTime = prefs.getString(_lastInterstitialTimeKey);
+    if (lastInterstitialTime != null) {
+      final lastTime = DateTime.parse(lastInterstitialTime);
+      final secondsSinceLastAd = now.difference(lastTime).inSeconds;
+
+      // Enforce minimum time between interstitials (2 minutes)
+      if (secondsSinceLastAd < minSecondsBetweenInterstitials) {
+        return false;
+      }
+    }
+
     final lastReset = DateTime.parse(
       prefs.getString(_lastResetKey) ?? now.toIso8601String(),
     );
@@ -74,8 +91,10 @@ class AdFrequencyService {
   // Record that an interstitial ad was shown
   Future<void> recordInterstitialAdShown() async {
     final prefs = await SharedPreferences.getInstance();
+    final now = DateTime.now();
     final count = prefs.getInt(_interstitialCountKey) ?? 0;
     await prefs.setInt(_interstitialCountKey, count + 1);
+    await prefs.setString(_lastInterstitialTimeKey, now.toIso8601String());
   }
 
   // Record that a rewarded ad was shown

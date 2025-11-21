@@ -1,551 +1,868 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:uuid/uuid.dart';
+import '../constants/app_constants.dart';
 import '../models/lesson.dart';
 import '../models/transaction.dart';
+import 'storage_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+/// API Service for communicating with Supabase backend
 class ApiService {
-  static const String baseUrl = 'https://learn-and-earn-04ok.onrender.com/api';
-  static String? _deviceId;
+  static const String baseUrl = AppConstants.SUPABASE_BASE_URL;
+  static const String _anonKey = AppConstants.SUPABASE_ANON_KEY;
 
-  // Set device ID for API calls
-  static void setDeviceId(String deviceId) {
-    _deviceId = deviceId;
-  }
+  /// Get authentication headers
+  static Future<Map<String, String>> _getAuthHeaders({
+    bool includeIdempotencyKey = false,
+    String? idempotencyKey,
+  }) async {
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      'apikey': _anonKey,
+    };
 
-  // Register device with backend
-  static Future<Map<String, dynamic>> registerDevice() async {
+    // Try to get token from Supabase session first
+    String? accessToken;
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/users/register'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'timestamp': DateTime.now().toIso8601String()}),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        _deviceId = data['deviceId'];
-        return data;
-      } else {
-        throw Exception('Failed to register device: ${response.statusCode}');
+      final session = Supabase.instance.client.auth.currentSession;
+      if (session != null) {
+        accessToken = session.accessToken;
       }
     } catch (e) {
-      print('Error registering device: $e');
-      // Return mock data for offline mode
-      _deviceId = 'offline_${DateTime.now().millisecondsSinceEpoch}';
+      // Fallback to stored token
+      accessToken = await StorageService.getAccessToken();
+    }
+
+    // If still no token, try stored token
+    if (accessToken == null) {
+      accessToken = await StorageService.getAccessToken();
+    }
+
+    if (accessToken != null) {
+      headers['Authorization'] = 'Bearer $accessToken';
+    }
+
+    if (includeIdempotencyKey && idempotencyKey != null) {
+      headers['Idempotency-Key'] = idempotencyKey;
+    }
+
+    return headers;
+  }
+
+  /// Generate a new UUID for idempotency
+  static String _generateIdempotencyKey() {
+    return const Uuid().v4();
+  }
+
+  /// Handle API errors
+  static Map<String, dynamic> _handleError(http.Response response) {
+    try {
+      final errorData = jsonDecode(response.body);
       return {
-        'deviceId': _deviceId,
-        'message': 'Offline mode - using local data',
+        'error': errorData['error'] ?? 'unknown_error',
+        'message': errorData['message'] ?? 'An error occurred',
+        'code': errorData['code'],
+        'details': errorData['details'],
+      };
+    } catch (e) {
+      return {
+        'error': 'parse_error',
+        'message': 'Failed to parse error response',
       };
     }
   }
 
-  // Get lessons from backend
-  static Future<List<Lesson>> getLessons() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/lessons'),
-        headers: {
-          'Content-Type': 'application/json',
-          if (_deviceId != null) 'X-Device-ID': _deviceId!,
-        },
-      );
+  // ===== DEVICE AUTHENTICATION =====
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return (data['lessons'] as List)
-            .map((json) => Lesson.fromJson(json))
-            .toList();
-      } else {
-        throw Exception('Failed to load lessons: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error loading lessons from API: $e');
-      // Return empty list for offline mode
-      return [];
-    }
-  }
-
-  // Record earning in backend
-  static Future<bool> recordEarning(String source, int amount) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/earnings/record'),
-        headers: {
-          'Content-Type': 'application/json',
-          if (_deviceId != null) 'X-Device-ID': _deviceId!,
-        },
-        body: jsonEncode({
-          'source': source,
-          'amount': amount,
-          'timestamp': DateTime.now().toIso8601String(),
-        }),
-      );
-
-      return response.statusCode == 200;
-    } catch (e) {
-      print('Error recording earning: $e');
-      return false;
-    }
-  }
-
-  // Get earnings history from backend
-  static Future<List<Transaction>> getEarningsHistory() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/earnings/history'),
-        headers: {
-          'Content-Type': 'application/json',
-          if (_deviceId != null) 'X-Device-ID': _deviceId!,
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return (data['earnings'] as List)
-            .map((json) => Transaction.fromJson(json))
-            .toList();
-      } else {
-        throw Exception('Failed to load earnings: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error loading earnings from API: $e');
-      return [];
-    }
-  }
-
-  // Request payout
-  static Future<Map<String, dynamic>> requestPayout(
-    String mobileNumber,
-    int coins,
-    double amountUsd,
-  ) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/payouts/request'),
-        headers: {
-          'Content-Type': 'application/json',
-          if (_deviceId != null) 'X-Device-ID': _deviceId!,
-        },
-        body: jsonEncode({
-          'mobileNumber': mobileNumber,
-          'coins': coins,
-          'amountUsd': amountUsd,
-          'timestamp': DateTime.now().toIso8601String(),
-          'signature': 'placeholder_signature', // TODO: Implement proper signature
-          'nonce': DateTime.now().millisecondsSinceEpoch.toString(),
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        throw Exception('Failed to request payout: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error requesting payout: $e');
-      return {
-        'success': false,
-        'message': 'Offline mode - payout request saved locally',
-      };
-    }
-  }
-
-  // Get payout history
-  static Future<List<Map<String, dynamic>>> getPayoutHistory() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/payouts/history'),
-        headers: {
-          'Content-Type': 'application/json',
-          if (_deviceId != null) 'X-Device-ID': _deviceId!,
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return List<Map<String, dynamic>>.from(data['payouts']);
-      } else {
-        throw Exception('Failed to load payouts: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error loading payouts from API: $e');
-      return [];
-    }
-  }
-
-  // Submit quiz results
-  static Future<Map<String, dynamic>> submitQuiz(
-    String lessonId,
-    List<int> answers,
-    int timeSpent,
-  ) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/quiz/submit'),
-        headers: {
-          'Content-Type': 'application/json',
-          if (_deviceId != null) 'X-Device-ID': _deviceId!,
-        },
-        body: jsonEncode({
-          'lessonId': lessonId,
-          'answers': answers,
-          'timeSpent': timeSpent,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        print(
-          'Failed to submit quiz: ${response.statusCode} - ${response.body}',
-        );
-        return {
-          'success': false,
-          'message': 'Failed to submit quiz: ${response.body}',
-        };
-      }
-    } catch (e) {
-      print('Error submitting quiz: $e');
-      return {'success': false, 'message': 'Failed to submit quiz: $e'};
-    }
-  }
-
-  // Get quiz history
-  static Future<List<Map<String, dynamic>>> getQuizHistory() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/quiz/history'),
-        headers: {
-          'Content-Type': 'application/json',
-          if (_deviceId != null) 'X-Device-ID': _deviceId!,
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> jsonList = jsonDecode(response.body);
-        return jsonList.map((json) => json as Map<String, dynamic>).toList();
-      } else {
-        print(
-          'Failed to load quiz history: ${response.statusCode} - ${response.body}',
-        );
-        return [];
-      }
-    } catch (e) {
-      print('Error getting quiz history: $e');
-      return [];
-    }
-  }
-
-  // Get user profile
-  static Future<Map<String, dynamic>> getUserProfile() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/users/profile'),
-        headers: {
-          'Content-Type': 'application/json',
-          if (_deviceId != null) 'X-Device-ID': _deviceId!,
-        },
-      );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        print(
-          'Failed to load user profile: ${response.statusCode} - ${response.body}',
-        );
-        return {};
-      }
-    } catch (e) {
-      print('Error getting user profile: $e');
-      return {};
-    }
-  }
-
-  // Set mobile money number
-  static Future<Map<String, dynamic>> setMobileMoneyNumber(
-    String mobileNumber,
-  ) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/users/mobile-number'),
-        headers: {
-          'Content-Type': 'application/json',
-          if (_deviceId != null) 'X-Device-ID': _deviceId!,
-        },
-        body: jsonEncode({'mobileNumber': mobileNumber}),
-      );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        print(
-          'Failed to set mobile number: ${response.statusCode} - ${response.body}',
-        );
-        return {
-          'success': false,
-          'message': 'Failed to set mobile number: ${response.body}',
-        };
-      }
-    } catch (e) {
-      print('Error setting mobile number: $e');
-      return {'success': false, 'message': 'Failed to set mobile number: $e'};
-    }
-  }
-
-  // Get daily earnings
-  static Future<List<Map<String, dynamic>>> getDailyEarnings() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/earnings/daily'),
-        headers: {
-          'Content-Type': 'application/json',
-          if (_deviceId != null) 'X-Device-ID': _deviceId!,
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> jsonList = jsonDecode(response.body);
-        return jsonList.map((json) => json as Map<String, dynamic>).toList();
-      } else {
-        print(
-          'Failed to load daily earnings: ${response.statusCode} - ${response.body}',
-        );
-        return [];
-      }
-    } catch (e) {
-      print('Error getting daily earnings: $e');
-      return [];
-    }
-  }
-
-  // Get user progress
-  static Future<Map<String, dynamic>> getUserProgress() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/users/progress'),
-        headers: {
-          'Content-Type': 'application/json',
-          if (_deviceId != null) 'X-Device-ID': _deviceId!,
-        },
-      );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        print(
-          'Failed to load user progress: ${response.statusCode} - ${response.body}',
-        );
-        return {};
-      }
-    } catch (e) {
-      print('Error getting user progress: $e');
-      return {};
-    }
-  }
-
-  // Perform daily reset
-  static Future<Map<String, dynamic>> performDailyReset() async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/users/progress/reset'),
-        headers: {
-          'Content-Type': 'application/json',
-          if (_deviceId != null) 'X-Device-ID': _deviceId!,
-        },
-      );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        print(
-          'Failed to perform daily reset: ${response.statusCode} - ${response.body}',
-        );
-        return {
-          'success': false,
-          'message': 'Failed to perform daily reset: ${response.body}',
-        };
-      }
-    } catch (e) {
-      print('Error performing daily reset: $e');
-      return {'success': false, 'message': 'Failed to perform daily reset: $e'};
-    }
-  }
-
-  // Complete a lesson
-  static Future<Map<String, dynamic>> completeLesson(String lessonId) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/users/lessons/$lessonId/complete'),
-        headers: {
-          'Content-Type': 'application/json',
-          if (_deviceId != null) 'X-Device-ID': _deviceId!,
-        },
-      );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        print(
-          'Failed to complete lesson: ${response.statusCode} - ${response.body}',
-        );
-        return {
-          'success': false,
-          'message': 'Failed to complete lesson: ${response.body}',
-        };
-      }
-    } catch (e) {
-      print('Error completing lesson: $e');
-      return {'success': false, 'message': 'Failed to complete lesson: $e'};
-    }
-  }
-
-  // Health check
-  static Future<bool> checkHealth() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/../health'), // Go up one level from /api to root
-        headers: {'Content-Type': 'application/json'},
-      );
-      return response.statusCode == 200;
-    } catch (e) {
-      print('Backend health check failed: $e');
-      return false;
-    }
-  }
-
-  // ===== LESSON PROGRESS TRACKING =====
-
-  /// Update lesson reading progress
-  static Future<Map<String, dynamic>> updateLessonProgress({
-    required String lessonId,
-    required double scrollPosition,
-    required int timeSpentSeconds,
-    DateTime? sessionStartedAt,
-    DateTime? sessionEndedAt,
-    int? sessionDuration,
+  /// Start device authentication (create/restore guest session)
+  static Future<Map<String, dynamic>> authDeviceStart({
+    String? deviceId,
+    required String deviceFingerprint,
+    String? installerId,
+    required Map<String, dynamic> deviceMetadata,
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/users/lessons/$lessonId/progress'),
-        headers: {
-          'Content-Type': 'application/json',
-          if (_deviceId != null) 'X-Device-ID': _deviceId!,
-        },
+        Uri.parse('$baseUrl/auth-device-start'),
+        headers: {'Content-Type': 'application/json', 'apikey': _anonKey},
         body: jsonEncode({
-          'scrollPosition': scrollPosition,
-          'timeSpentSeconds': timeSpentSeconds,
-          if (sessionStartedAt != null)
-            'sessionStartedAt': sessionStartedAt.toIso8601String(),
-          if (sessionEndedAt != null)
-            'sessionEndedAt': sessionEndedAt.toIso8601String(),
-          if (sessionDuration != null) 'sessionDuration': sessionDuration,
+          if (deviceId != null) 'device_id': deviceId,
+          'device_fingerprint': deviceFingerprint,
+          if (installerId != null) 'installer_id': installerId,
+          'device_metadata': deviceMetadata,
         }),
       );
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        print(
-          'Failed to update lesson progress: ${response.statusCode} - ${response.body}',
-        );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+
+        // Store session
+        if (data['session'] != null) {
+          final session = data['session'];
+          await StorageService.saveSession(
+            accessToken: session['access_token'],
+            refreshToken: session['refresh_token'],
+            expiresAt: DateTime.parse(session['expires_at']),
+            userId: data['user_id'],
+            deviceId: data['device_id'],
+          );
+        }
+
         return {
-          'success': false,
-          'message': 'Failed to update progress: ${response.body}',
+          'success': true,
+          'session': data['session'],
+          'user_id': data['user_id'],
+          'is_new_user': data['is_new_user'] ?? false,
+          'device_id': data['device_id'],
         };
+      } else {
+        return {'success': false, ..._handleError(response)};
       }
     } catch (e) {
-      print('Error updating lesson progress: $e');
-      return {'success': false, 'message': 'Failed to update progress: $e'};
-    }
-  }
-
-  /// Get progress for a specific lesson
-  static Future<Map<String, dynamic>> getLessonProgress(String lessonId) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/users/lessons/$lessonId/progress'),
-        headers: {
-          'Content-Type': 'application/json',
-          if (_deviceId != null) 'X-Device-ID': _deviceId!,
-        },
-      );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        print(
-          'Failed to get lesson progress: ${response.statusCode} - ${response.body}',
-        );
-        // Return default progress
-        return {
-          'lessonId': lessonId,
-          'scrollPosition': 0,
-          'timeSpentSeconds': 0,
-          'isCompleted': false,
-        };
-      }
-    } catch (e) {
-      print('Error getting lesson progress: $e');
-      // Return default progress
       return {
-        'lessonId': lessonId,
-        'scrollPosition': 0,
-        'timeSpentSeconds': 0,
-        'isCompleted': false,
+        'success': false,
+        'error': 'network_error',
+        'message': 'Network error: $e',
       };
     }
   }
 
-  /// Get all lesson progress
-  static Future<Map<String, dynamic>> getAllLessonProgress() async {
+  // ===== USER PROFILE & XP =====
+
+  /// Get user profile and XP balance
+  static Future<Map<String, dynamic>> getMe() async {
     try {
+      final headers = await _getAuthHeaders();
       final response = await http.get(
-        Uri.parse('$baseUrl/users/lessons/progress'),
-        headers: {
-          'Content-Type': 'application/json',
-          if (_deviceId != null) 'X-Device-ID': _deviceId!,
-        },
+        Uri.parse('$baseUrl/me'),
+        headers: headers,
       );
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        return {'success': true, ...jsonDecode(response.body)};
       } else {
-        print(
-          'Failed to get all lesson progress: ${response.statusCode} - ${response.body}',
-        );
-        return {'progress': [], 'completedCount': 0};
+        return {'success': false, ..._handleError(response)};
       }
     } catch (e) {
-      print('Error getting all lesson progress: $e');
-      return {'progress': [], 'completedCount': 0};
+      return {
+        'success': false,
+        'error': 'network_error',
+        'message': 'Network error: $e',
+      };
     }
   }
 
-  /// Reset progress for a specific lesson
-  static Future<Map<String, dynamic>> resetLessonProgress(String lessonId) async {
+  /// Update user email in users_public table
+  static Future<Map<String, dynamic>> updateUserEmail({
+    required String email,
+  }) async {
     try {
-      final response = await http.delete(
-        Uri.parse('$baseUrl/users/lessons/$lessonId/progress'),
-        headers: {
-          'Content-Type': 'application/json',
-          if (_deviceId != null) 'X-Device-ID': _deviceId!,
-        },
+      final headers = await _getAuthHeaders();
+      final response = await http.put(
+        Uri.parse('$baseUrl/me'),
+        headers: headers,
+        body: jsonEncode({'email': email}),
       );
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        return {
+          'success': true,
+          'message': 'Email updated successfully',
+          ...jsonDecode(response.body),
+        };
       } else {
-        print(
-          'Failed to reset lesson progress: ${response.statusCode} - ${response.body}',
-        );
+        return {'success': false, ..._handleError(response)};
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'network_error',
+        'message': 'Network error: $e',
+      };
+    }
+  }
+
+  /// Link email to user account using OTP
+  /// Uses the existing /auth-otp endpoint to send OTP to email
+  /// After OTP is verified with Supabase Auth SDK, email is automatically linked
+  static Future<Map<String, dynamic>> linkEmail({
+    required String email,
+    String? referralCode,
+  }) async {
+    try {
+      // Use /auth-otp endpoint (no auth required for sending OTP)
+      final headers = <String, String>{
+        'Content-Type': 'application/json',
+        'apikey': _anonKey,
+        'Authorization': 'Bearer $_anonKey',
+      };
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth-otp'),
+        headers: headers,
+        body: jsonEncode({
+          'email': email,
+          if (referralCode != null) 'referral_code': referralCode,
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {
+          'success': true,
+          'message': 'Verification code sent to your email',
+          ...jsonDecode(response.body),
+        };
+      } else {
+        return {'success': false, ..._handleError(response)};
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'network_error',
+        'message': 'Network error: $e',
+      };
+    }
+  }
+
+  // ===== XP CREDIT (BATCHED) =====
+
+  /// Credit XP in batches with idempotency
+  static Future<Map<String, dynamic>> creditXp({
+    required List<Map<String, dynamic>> events,
+  }) async {
+    try {
+      final idempotencyKey = _generateIdempotencyKey();
+      final headers = await _getAuthHeaders(
+        includeIdempotencyKey: true,
+        idempotencyKey: idempotencyKey,
+      );
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/xp-credit'),
+        headers: headers,
+        body: jsonEncode({'events': events}),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {'success': true, ...jsonDecode(response.body)};
+      } else {
+        return {'success': false, ..._handleError(response)};
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'network_error',
+        'message': 'Network error: $e',
+      };
+    }
+  }
+
+  /// Get XP history with cursor pagination
+  static Future<Map<String, dynamic>> getXpHistory({
+    int limit = 50,
+    String? cursor,
+  }) async {
+    try {
+      final headers = await _getAuthHeaders();
+      final queryParams = <String, String>{
+        'limit': limit.toString(),
+        if (cursor != null) 'cursor': cursor,
+      };
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/xp-history').replace(queryParameters: queryParams),
+        headers: headers,
+      );
+
+      if (response.statusCode == 200) {
+        return {'success': true, ...jsonDecode(response.body)};
+      } else {
+        return {'success': false, ..._handleError(response)};
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'network_error',
+        'message': 'Network error: $e',
+      };
+    }
+  }
+
+  // ===== LESSONS =====
+
+  /// Get published lessons
+  static Future<Map<String, dynamic>> getLessons({
+    int limit = 50,
+    int offset = 0,
+    String? category,
+  }) async {
+    try {
+      final queryParams = <String, String>{
+        'limit': limit.toString(),
+        'offset': offset.toString(),
+        if (category != null) 'category': category,
+      };
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/lessons').replace(queryParameters: queryParams),
+        headers: {'Content-Type': 'application/json', 'apikey': _anonKey},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return {
+          'success': true,
+          'lessons': (data['lessons'] as List)
+              .map((json) => Lesson.fromJson(json))
+              .toList(),
+          'total': data['total'] ?? 0,
+        };
+      } else {
         return {
           'success': false,
-          'message': 'Failed to reset progress: ${response.body}',
+          'lessons': <Lesson>[],
+          'total': 0,
+          ..._handleError(response),
         };
       }
     } catch (e) {
-      print('Error resetting lesson progress: $e');
-      return {'success': false, 'message': 'Failed to reset progress: $e'};
+      return {
+        'success': false,
+        'lessons': <Lesson>[],
+        'total': 0,
+        'error': 'network_error',
+        'message': 'Network error: $e',
+      };
     }
+  }
+
+  /// Update lesson progress
+  static Future<Map<String, dynamic>> updateLessonProgress({
+    required String lessonId,
+    required double progressPercent,
+    required int timeSpentSeconds,
+    Map<String, dynamic>? metadata,
+  }) async {
+    try {
+      final headers = await _getAuthHeaders();
+      final response = await http.post(
+        Uri.parse('$baseUrl/lessons-progress'),
+        headers: headers,
+        body: jsonEncode({
+          'lesson_id': lessonId,
+          'progress_percent': progressPercent,
+          'time_spent_seconds': timeSpentSeconds,
+          if (metadata != null) 'metadata': metadata,
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {'success': true, ...jsonDecode(response.body)};
+      } else {
+        return {'success': false, ..._handleError(response)};
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'network_error',
+        'message': 'Network error: $e',
+      };
+    }
+  }
+
+  /// Mark lesson as complete (idempotent, awards XP)
+  /// For mobile app local lessons, include xp_reward so backend can award XP
+  static Future<Map<String, dynamic>> completeLesson({
+    required String lessonId,
+    required int timeSpentSeconds,
+    Map<String, dynamic>? metadata,
+    int? xpReward, // XP reward for mobile app local lessons
+  }) async {
+    try {
+      final idempotencyKey = _generateIdempotencyKey();
+      final headers = await _getAuthHeaders(
+        includeIdempotencyKey: true,
+        idempotencyKey: idempotencyKey,
+      );
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/lessons-complete'),
+        headers: headers,
+        body: jsonEncode({
+          'lesson_id': lessonId,
+          'time_spent_seconds': timeSpentSeconds,
+          if (xpReward != null)
+            'xp_reward': xpReward, // Send XP reward for mobile app lessons
+          if (metadata != null) 'metadata': metadata,
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {'success': true, ...jsonDecode(response.body)};
+      } else {
+        return {'success': false, ..._handleError(response)};
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'network_error',
+        'message': 'Network error: $e',
+      };
+    }
+  }
+
+  // ===== USER STATS =====
+
+  /// Get user statistics (streak, daily login, achievements)
+  static Future<Map<String, dynamic>> getUserStats() async {
+    try {
+      final headers = await _getAuthHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/user-stats'),
+        headers: headers,
+      );
+
+      if (response.statusCode == 200) {
+        return {'success': true, ...jsonDecode(response.body)};
+      } else {
+        return {'success': false, ..._handleError(response)};
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'network_error',
+        'message': 'Network error: $e',
+      };
+    }
+  }
+
+  /// Update user statistics
+  static Future<Map<String, dynamic>> updateUserStats({
+    int? learningStreak,
+    String? lastStreakDate,
+    String? lastDailyLoginDate,
+    int? totalLessonsCompleted,
+    int? totalQuizzesCompleted,
+    int? totalAdViews,
+    int? longestStreak,
+  }) async {
+    try {
+      final headers = await _getAuthHeaders();
+      final body = <String, dynamic>{};
+
+      if (learningStreak != null) body['learning_streak'] = learningStreak;
+      if (lastStreakDate != null) body['last_streak_date'] = lastStreakDate;
+      if (lastDailyLoginDate != null)
+        body['last_daily_login_date'] = lastDailyLoginDate;
+      if (totalLessonsCompleted != null)
+        body['total_lessons_completed'] = totalLessonsCompleted;
+      if (totalQuizzesCompleted != null)
+        body['total_quizzes_completed'] = totalQuizzesCompleted;
+      if (totalAdViews != null) body['total_ad_views'] = totalAdViews;
+      if (longestStreak != null) body['longest_streak'] = longestStreak;
+
+      final response = await http.put(
+        Uri.parse('$baseUrl/user-stats'),
+        headers: headers,
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        return {'success': true, ...jsonDecode(response.body)};
+      } else {
+        return {'success': false, ..._handleError(response)};
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'network_error',
+        'message': 'Network error: $e',
+      };
+    }
+  }
+
+  /// Record daily login
+  static Future<Map<String, dynamic>> recordDailyLogin({
+    required int xpAwarded,
+    required bool adWatched,
+  }) async {
+    try {
+      final idempotencyKey = _generateIdempotencyKey();
+      final headers = await _getAuthHeaders(
+        includeIdempotencyKey: true,
+        idempotencyKey: idempotencyKey,
+      );
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/daily-login'),
+        headers: headers,
+        body: jsonEncode({'xp_awarded': xpAwarded, 'ad_watched': adWatched}),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {'success': true, ...jsonDecode(response.body)};
+      } else {
+        return {'success': false, ..._handleError(response)};
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'network_error',
+        'message': 'Network error: $e',
+      };
+    }
+  }
+
+  // ===== QUIZ SUBMISSIONS =====
+
+  /// Submit quiz results
+  static Future<Map<String, dynamic>> submitQuiz({
+    required String lessonId,
+    required List<int> answers,
+    int? timeSpentSeconds,
+    String? quizId,
+    int? correctAnswers,
+    int? totalQuestions,
+    int? xpReward,
+  }) async {
+    try {
+      final idempotencyKey = _generateIdempotencyKey();
+      final headers = await _getAuthHeaders(
+        includeIdempotencyKey: true,
+        idempotencyKey: idempotencyKey,
+      );
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/quiz-submit'),
+        headers: headers,
+        body: jsonEncode({
+          'lesson_id': lessonId,
+          'quiz_id': quizId,
+          'answers': answers,
+          'correct_answers': correctAnswers,
+          'total_questions': totalQuestions ?? answers.length,
+          'time_spent_seconds': timeSpentSeconds ?? 0,
+          if (xpReward != null) 'xp_reward': xpReward,
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {'success': true, ...jsonDecode(response.body)};
+      } else {
+        return {'success': false, ..._handleError(response)};
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'network_error',
+        'message': 'Network error: $e',
+      };
+    }
+  }
+
+  // ===== ACHIEVEMENTS =====
+
+  /// Get user achievements
+  static Future<Map<String, dynamic>> getAchievements() async {
+    try {
+      final headers = await _getAuthHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/achievements'),
+        headers: headers,
+      );
+
+      if (response.statusCode == 200) {
+        return {'success': true, ...jsonDecode(response.body)};
+      } else {
+        return {'success': false, ..._handleError(response)};
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'network_error',
+        'message': 'Network error: $e',
+      };
+    }
+  }
+
+  /// Unlock an achievement
+  static Future<Map<String, dynamic>> unlockAchievement({
+    required String achievementType,
+    required String achievementName,
+    int xpReward = 0,
+  }) async {
+    try {
+      final headers = await _getAuthHeaders();
+      final response = await http.post(
+        Uri.parse('$baseUrl/achievements'),
+        headers: headers,
+        body: jsonEncode({
+          'achievement_type': achievementType,
+          'achievement_name': achievementName,
+          'xp_reward': xpReward,
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {'success': true, ...jsonDecode(response.body)};
+      } else {
+        return {'success': false, ..._handleError(response)};
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'network_error',
+        'message': 'Network error: $e',
+      };
+    }
+  }
+
+  // ===== REFERRALS =====
+
+  /// Get referral statistics
+  static Future<Map<String, dynamic>> getReferrals() async {
+    try {
+      final headers = await _getAuthHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/referrals'),
+        headers: headers,
+      );
+
+      if (response.statusCode == 200) {
+        return {'success': true, ...jsonDecode(response.body)};
+      } else {
+        return {'success': false, ..._handleError(response)};
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'network_error',
+        'message': 'Network error: $e',
+      };
+    }
+  }
+
+  /// Claim/record referral code
+  static Future<Map<String, dynamic>> claimReferral({
+    required String referralCode,
+  }) async {
+    try {
+      final userId = await StorageService.getUserId();
+      if (userId == null) {
+        return {
+          'success': false,
+          'error': 'auth_required',
+          'message': 'User ID not found',
+        };
+      }
+
+      final idempotencyKey = _generateIdempotencyKey();
+      final headers = await _getAuthHeaders(
+        includeIdempotencyKey: true,
+        idempotencyKey: idempotencyKey,
+      );
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/referral-signup'),
+        headers: headers,
+        body: jsonEncode({'user_id': userId, 'referral_code': referralCode}),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {'success': true, ...jsonDecode(response.body)};
+      } else {
+        return {'success': false, ..._handleError(response)};
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'network_error',
+        'message': 'Network error: $e',
+      };
+    }
+  }
+
+  // ===== CONVERSION & WITHDRAWALS =====
+
+  /// Get current XP to TZS conversion rate
+  static Future<Map<String, dynamic>> getConversionRate() async {
+    try {
+      final headers = await _getAuthHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/conversion-rate'),
+        headers: headers,
+      );
+
+      if (response.statusCode == 200) {
+        return {'success': true, ...jsonDecode(response.body)};
+      } else {
+        return {'success': false, ..._handleError(response)};
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'network_error',
+        'message': 'Network error: $e',
+      };
+    }
+  }
+
+  /// Get withdrawals (read-only for mobile)
+  static Future<Map<String, dynamic>> getWithdrawals({
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    try {
+      final headers = await _getAuthHeaders();
+      final queryParams = <String, String>{
+        'page': page.toString(),
+        'page_size': pageSize.toString(),
+      };
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/withdrawals').replace(queryParameters: queryParams),
+        headers: headers,
+      );
+
+      if (response.statusCode == 200) {
+        return {'success': true, ...jsonDecode(response.body)};
+      } else {
+        return {'success': false, ..._handleError(response)};
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'network_error',
+        'message': 'Network error: $e',
+      };
+    }
+  }
+
+  // ===== SYSTEM ENDPOINTS =====
+
+  /// Get API version and feature flags
+  static Future<Map<String, dynamic>> getVersion() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/version'),
+        headers: {'Content-Type': 'application/json', 'apikey': _anonKey},
+      );
+
+      if (response.statusCode == 200) {
+        return {'success': true, ...jsonDecode(response.body)};
+      } else {
+        return {'success': false, ..._handleError(response)};
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'network_error',
+        'message': 'Network error: $e',
+      };
+    }
+  }
+
+  /// Health check
+  static Future<Map<String, dynamic>> checkHealth() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/health'),
+        headers: {'Content-Type': 'application/json', 'apikey': _anonKey},
+      );
+
+      if (response.statusCode == 200) {
+        return {'success': true, ...jsonDecode(response.body)};
+      } else {
+        return {'success': false, 'status': 'unhealthy'};
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'status': 'unreachable',
+        'error': 'network_error',
+        'message': 'Network error: $e',
+      };
+    }
+  }
+
+  // ===== LEGACY COMPATIBILITY METHODS =====
+  // These methods maintain backward compatibility with existing code
+
+  /// Legacy: Get lessons (returns List<Lesson>)
+  static Future<List<Lesson>> getLessonsList({
+    int limit = 50,
+    int offset = 0,
+    String? category,
+  }) async {
+    final result = await getLessons(
+      limit: limit,
+      offset: offset,
+      category: category,
+    );
+    if (result['success'] == true) {
+      return result['lessons'] as List<Lesson>;
+    }
+    return [];
+  }
+
+  /// Legacy: Get earnings history (returns List<Transaction>)
+  static Future<List<Transaction>> getEarningsHistory() async {
+    final result = await getXpHistory(limit: 100);
+    if (result['success'] == true) {
+      final events = result['events'] as List?;
+      if (events != null) {
+        return events.map((event) {
+          return Transaction(
+            id: event['id'] ?? '',
+            title: _getSourceTitle(event['source'] ?? 'unknown'),
+            amount: event['xp_delta'] ?? 0,
+            timestamp: DateTime.parse(event['created_at']),
+            type: event['xp_delta']! > 0 ? 'credit' : 'debit',
+          );
+        }).toList();
+      }
+    }
+    return [];
+  }
+
+  static String _getSourceTitle(String source) {
+    switch (source) {
+      case 'lesson':
+        return 'Lesson Completed';
+      case 'quiz':
+        return 'Quiz Completed';
+      case 'ad':
+        return 'Ad Reward';
+      case 'daily':
+        return 'Daily Bonus';
+      case 'referral_reward':
+        return 'Referral Reward';
+      default:
+        return 'XP Credit';
+    }
+  }
+
+  /// Legacy: Record earning (uses XP credit)
+  static Future<bool> recordEarning(String source, int amount) async {
+    final nonce = _generateIdempotencyKey();
+    final result = await creditXp(
+      events: [
+        {'nonce': nonce, 'source': source, 'xp_delta': amount, 'metadata': {}},
+      ],
+    );
+    return result['success'] == true;
+  }
+
+  /// Legacy: Complete lesson
+  static Future<Map<String, dynamic>> completeLessonLegacy(
+    String lessonId,
+  ) async {
+    return await completeLesson(lessonId: lessonId, timeSpentSeconds: 0);
+  }
+
+  /// Legacy: Get user profile
+  static Future<Map<String, dynamic>> getUserProfile() async {
+    return await getMe();
   }
 }

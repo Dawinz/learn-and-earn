@@ -12,8 +12,6 @@ class _SettingsPageState extends State<SettingsPage> {
   bool soundEnabled = true;
   bool autoSyncEnabled = true;
   bool darkModeEnabled = false;
-  bool dataUsageOptimized = false;
-  bool biometricEnabled = false;
 
   @override
   Widget build(BuildContext context) {
@@ -61,13 +59,13 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 _buildSwitchTile(
                   'Achievement Alerts',
-                  'Celebrate when you earn achievements',
+                  'Celebrate when you unlock achievements',
                   true,
                   (value) {},
                 ),
                 _buildSwitchTile(
-                  'Earning Updates',
-                  'Get notified about new earning opportunities',
+                  'Learning Updates',
+                  'Get notified about new lessons and content',
                   true,
                   (value) {},
                 ),
@@ -95,51 +93,10 @@ class _SettingsPageState extends State<SettingsPage> {
                   (value) => setState(() => darkModeEnabled = value),
                 ),
                 _buildSwitchTile(
-                  'Data Usage Optimization',
-                  'Reduce data usage for slower connections',
-                  dataUsageOptimized,
-                  (value) => setState(() => dataUsageOptimized = value),
-                ),
-                _buildSwitchTile(
-                  'Biometric Authentication',
-                  'Use fingerprint or face recognition',
-                  biometricEnabled,
-                  (value) => setState(() => biometricEnabled = value),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 20),
-
-            // Sync & Data Section
-            _buildSectionCard(
-              'Sync & Data',
-              Icons.sync,
-              const Color(0xFF9C27B0),
-              [
-                _buildSwitchTile(
                   'Auto Sync',
-                  'Automatically sync with backend',
+                  'Automatically sync your progress',
                   autoSyncEnabled,
                   (value) => setState(() => autoSyncEnabled = value),
-                ),
-                _buildListTile(
-                  'Sync Frequency',
-                  'Every 30 minutes',
-                  Icons.schedule,
-                  () => _showSyncFrequencyDialog(),
-                ),
-                _buildListTile(
-                  'Data Usage',
-                  '2.5 MB this month',
-                  Icons.data_usage,
-                  () => _showDataUsageDialog(),
-                ),
-                _buildListTile(
-                  'Clear Cache',
-                  'Free up storage space',
-                  Icons.cleaning_services,
-                  () => _clearCache(),
                 ),
               ],
             ),
@@ -157,18 +114,6 @@ class _SettingsPageState extends State<SettingsPage> {
                   'Manage your personal details',
                   Icons.edit,
                   () => _editProfile(),
-                ),
-                _buildListTile(
-                  'Privacy Settings',
-                  'Control your data and privacy',
-                  Icons.privacy_tip,
-                  () => _showPrivacySettings(),
-                ),
-                _buildListTile(
-                  'Security',
-                  'Password and security options',
-                  Icons.security,
-                  () => _showSecuritySettings(),
                 ),
                 _buildListTile(
                   'Sign Out',
@@ -204,7 +149,7 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               _buildListTile(
                 'App Version',
-                'Version 1.0.0',
+                'Version 2.0.0',
                 Icons.info,
                 () => _showVersionInfo(),
               ),
@@ -246,7 +191,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      '© 2024 Learn & Earn. All rights reserved.',
+                      '© 2024 Learn & Grow. All rights reserved.',
                       style: TextStyle(fontSize: 12, color: Colors.grey),
                       textAlign: TextAlign.center,
                     ),
@@ -343,88 +288,10 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  void _showSyncFrequencyDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Sync Frequency'),
-        content: const Text(
-          'Choose how often to sync your data with the server.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showDataUsageDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Data Usage'),
-        content: const Text('This month you have used 2.5 MB of data.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _clearCache() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Clear Cache'),
-        content: const Text('This will clear all cached data. Continue?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Cache cleared successfully!'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            },
-            child: const Text('Clear'),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _editProfile() {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('Edit profile coming soon!')));
-  }
-
-  void _showPrivacySettings() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Privacy settings coming soon!')),
-    );
-  }
-
-  void _showSecuritySettings() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Security settings coming soon!')),
-    );
   }
 
   void _signOut() {
@@ -478,7 +345,7 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('App Version'),
-        content: const Text('Learn & Earn v1.0.0\n\nBuild: 1.0.0+1'),
+        content: const Text('Learn & Grow v2.0.0\n\nBuild: 2.0.0+3'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),

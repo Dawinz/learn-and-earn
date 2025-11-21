@@ -159,7 +159,7 @@ class LearnScreen extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Lessons reset daily! Complete them again to earn more coins.',
+                    'Lessons reset daily! Complete them again to earn more XP.',
                     style: TextStyle(
                       color: Colors.blue[700],
                       fontSize: 14,
@@ -346,13 +346,13 @@ class LearnScreen extends StatelessWidget {
                         ),
                         const SizedBox(width: 16),
                         Icon(
-                          Icons.monetization_on,
+                          Icons.star,
                           size: 16,
                           color: Colors.amber[700],
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '${lesson.coinReward} coins',
+                          '${lesson.coinReward} XP',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.amber[700],

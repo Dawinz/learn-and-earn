@@ -1,18 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'widgets/auth_wrapper.dart';
 import 'providers/app_provider.dart';
 import 'services/ad_service.dart';
 import 'services/notification_service_temp.dart';
 import 'services/connectivity_service.dart';
 import 'services/version_service.dart';
-import 'screens/login_screen.dart';
-import 'screens/signup_screen.dart';
 import 'screens/main_navigation.dart';
 import 'screens/force_update_screen.dart';
+import 'constants/app_constants.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Supabase
+  await Supabase.initialize(
+    url: 'https://iscqpvwtikwqquvxlpsr.supabase.co',
+    anonKey: AppConstants.SUPABASE_ANON_KEY,
+    debug: false, // Set to true for development
+  );
 
   // Initialize Version Service
   await VersionService.instance.initialize();
@@ -43,7 +50,7 @@ class ForceUpdateApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Learn & Earn',
+      title: 'Learn & Grow',
       theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
       home: ForceUpdateScreen(versionResult: versionResult),
       debugShowCheckedModeBanner: false,
@@ -59,7 +66,7 @@ class LearnEarnApp extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (context) => AppProvider()..initialize(),
       child: MaterialApp(
-        title: 'Learn & Earn',
+        title: 'Learn & Grow',
         theme: ThemeData(
           primarySwatch: Colors.blue,
           useMaterial3: true,
@@ -70,8 +77,6 @@ class LearnEarnApp extends StatelessWidget {
         ),
         home: const AuthWrapper(),
         routes: {
-          '/login': (context) => const LoginScreen(),
-          '/signup': (context) => const SignupScreen(),
           '/main': (context) => const MainNavigation(),
         },
         debugShowCheckedModeBanner: false,

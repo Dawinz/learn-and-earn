@@ -1,243 +1,276 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user.dart';
+import 'device_service.dart';
+import 'storage_service.dart';
+import 'api_service.dart';
 
+/// Auth Service for device-based guest authentication
 class AuthService {
-  static const String baseUrl = 'https://learn-and-earn-04ok.onrender.com/api';
-  static const String _tokenKey = 'auth_token';
   static const String _userKey = 'user_data';
 
-  // Get stored token
-  static Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_tokenKey);
+  /// Initialize device authentication
+  /// This should be called on app startup
+  static Future<Map<String, dynamic>> initializeDeviceAuth() async {
+    try {
+      // Initialize device service
+      await DeviceService.instance.initialize();
+
+      // Check if we have a valid session
+      final isValid = await StorageService.isTokenValid();
+      if (isValid) {
+        // Try to restore session
+        final deviceId = await StorageService.getStoredDeviceId();
+        if (deviceId != null) {
+          return await restoreDeviceSession(deviceId: deviceId);
+        }
+      }
+
+      // Start new device authentication
+      return await startDeviceAuth();
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'initialization_error',
+        'message': 'Failed to initialize authentication: $e',
+      };
+    }
   }
 
-  // Get stored user
+  /// Start device authentication (first launch or new device)
+  static Future<Map<String, dynamic>> startDeviceAuth() async {
+    try {
+      final deviceService = DeviceService.instance;
+      await deviceService.initialize();
+
+      final deviceId = await StorageService.getStoredDeviceId();
+      final deviceFingerprint = await deviceService.getDeviceFingerprint();
+      final installerId = await deviceService.getInstallerId();
+      final deviceMetadata = await deviceService.getDeviceMetadata();
+
+      final result = await ApiService.authDeviceStart(
+        deviceId: deviceId,
+        deviceFingerprint: deviceFingerprint,
+        installerId: installerId,
+        deviceMetadata: deviceMetadata,
+      );
+
+      if (result['success'] == true) {
+        // Store device ID if provided
+        if (result['device_id'] != null) {
+          await deviceService.storeDeviceId(result['device_id']);
+        }
+
+        // Load user profile
+        final userProfile = await ApiService.getMe();
+        if (userProfile['success'] == true && userProfile['profile'] != null) {
+          final profile = userProfile['profile'];
+          final user = User(
+            id: profile['id'] ?? result['user_id'] ?? '',
+            email: profile['email'] ?? '',
+            name: profile['name'] ?? 'Guest User',
+            phoneNumber: profile['phone'],
+            createdAt: profile['created_at'] != null
+                ? DateTime.parse(profile['created_at'])
+                : DateTime.now(),
+            lastLoginAt: DateTime.now(),
+            isEmailVerified: profile['email_verified'] ?? false,
+          );
+          await storeUser(user);
+        }
+      }
+
+      return result;
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'auth_error',
+        'message': 'Failed to start device authentication: $e',
+      };
+    }
+  }
+
+  /// Restore device session (subsequent launches)
+  static Future<Map<String, dynamic>> restoreDeviceSession({
+    required String deviceId,
+  }) async {
+    try {
+      final deviceService = DeviceService.instance;
+      await deviceService.initialize();
+
+      final deviceFingerprint = await deviceService.getDeviceFingerprint();
+      final installerId = await deviceService.getInstallerId();
+      final deviceMetadata = await deviceService.getDeviceMetadata();
+
+      final result = await ApiService.authDeviceStart(
+        deviceId: deviceId,
+        deviceFingerprint: deviceFingerprint,
+        installerId: installerId,
+        deviceMetadata: deviceMetadata,
+      );
+
+      if (result['success'] == true) {
+        // Load user profile
+        final userProfile = await ApiService.getMe();
+        if (userProfile['success'] == true && userProfile['profile'] != null) {
+          final profile = userProfile['profile'];
+          final user = User(
+            id: profile['id'] ?? result['user_id'] ?? '',
+            email: profile['email'] ?? '',
+            name: profile['name'] ?? 'Guest User',
+            phoneNumber: profile['phone'],
+            createdAt: profile['created_at'] != null
+                ? DateTime.parse(profile['created_at'])
+                : DateTime.now(),
+            lastLoginAt: DateTime.now(),
+            isEmailVerified: profile['email_verified'] ?? false,
+          );
+          await storeUser(user);
+        }
+      }
+
+      return result;
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'restore_error',
+        'message': 'Failed to restore session: $e',
+      };
+    }
+  }
+
+  /// Get stored token (for backward compatibility)
+  static Future<String?> getToken() async {
+    return await StorageService.getAccessToken();
+  }
+
+  /// Get stored user
   static Future<User?> getStoredUser() async {
     final prefs = await SharedPreferences.getInstance();
     final userJson = prefs.getString(_userKey);
     if (userJson != null) {
-      return User.fromJson(jsonDecode(userJson));
+      try {
+        return User.fromJson(jsonDecode(userJson));
+      } catch (e) {
+        return null;
+      }
     }
     return null;
   }
 
-  // Store auth data
+  /// Store auth data
   static Future<void> storeAuthData(String token, User user) async {
+    await StorageService.saveSession(
+      accessToken: token,
+      refreshToken: '', // Not used in device auth
+      expiresAt: DateTime.now().add(const Duration(days: 30)),
+      userId: user.id,
+    );
+    await storeUser(user);
+  }
+
+  /// Store user
+  static Future<void> storeUser(User user) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_tokenKey, token);
     await prefs.setString(_userKey, jsonEncode(user.toJson()));
   }
 
-  // Clear auth data
+  /// Clear auth data
   static Future<void> clearAuthData() async {
+    await StorageService.clearSession();
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_tokenKey);
     await prefs.remove(_userKey);
   }
 
-  // Check if user is logged in
+  /// Check if user is logged in
   static Future<bool> isLoggedIn() async {
     final token = await getToken();
-    return token != null && token.isNotEmpty;
+    final isValid = await StorageService.isTokenValid();
+    return token != null && token.isNotEmpty && isValid;
   }
 
-  // Sign up
-  static Future<AuthResponse> signup(SignupRequest request) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/signup'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(request.toJson()),
-      );
-
-      final data = jsonDecode(response.body);
-      final authResponse = AuthResponse.fromJson(data);
-
-      if (authResponse.success &&
-          authResponse.token != null &&
-          authResponse.user != null) {
-        await storeAuthData(authResponse.token!, authResponse.user!);
-      }
-
-      return authResponse;
-    } catch (e) {
-      print('Signup error: $e');
-      return AuthResponse(
-        success: false,
-        message: 'Network error. Please check your connection.',
-      );
-    }
-  }
-
-  // Login
-  static Future<AuthResponse> login(LoginRequest request) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(request.toJson()),
-      );
-
-      final data = jsonDecode(response.body);
-      final authResponse = AuthResponse.fromJson(data);
-
-      if (authResponse.success &&
-          authResponse.token != null &&
-          authResponse.user != null) {
-        await storeAuthData(authResponse.token!, authResponse.user!);
-      }
-
-      return authResponse;
-    } catch (e) {
-      print('Login error: $e');
-      return AuthResponse(
-        success: false,
-        message: 'Network error. Please check your connection.',
-      );
-    }
-  }
-
-  // Logout
+  /// Logout
   static Future<void> logout() async {
-    try {
-      final token = await getToken();
-      if (token != null) {
-        await http.post(
-          Uri.parse('$baseUrl/auth/logout'),
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $token',
-          },
-        );
-      }
-    } catch (e) {
-      print('Logout error: $e');
-    } finally {
-      await clearAuthData();
-    }
+    await clearAuthData();
+    // Note: We don't clear device_id to allow re-authentication
   }
 
-  // Get current user profile
+  /// Get current user profile from backend
   static Future<User?> getCurrentUser() async {
     try {
       final token = await getToken();
       if (token == null) return null;
 
-      final response = await http.get(
-        Uri.parse('$baseUrl/auth/profile'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final user = User.fromJson(data['user']);
-        await storeAuthData(token, user);
+      final result = await ApiService.getMe();
+      if (result['success'] == true && result['profile'] != null) {
+        final profile = result['profile'];
+        final user = User(
+          id: profile['id'] ?? '',
+          email: profile['email'] ?? '',
+          name: profile['name'] ?? 'Guest User',
+          phoneNumber: profile['phone'],
+          createdAt: profile['created_at'] != null
+              ? DateTime.parse(profile['created_at'])
+              : DateTime.now(),
+          lastLoginAt: DateTime.now(),
+          isEmailVerified: profile['email_verified'] ?? false,
+        );
+        await storeUser(user);
         return user;
       }
       return null;
     } catch (e) {
-      print('Get current user error: $e');
       return null;
     }
   }
 
-  // Update user profile
+  // ===== LEGACY METHODS (for backward compatibility) =====
+  // These methods are kept for compatibility but may not work with device-based auth
+
+  /// Legacy: Sign up (not used in device-based auth)
+  static Future<AuthResponse> signup(SignupRequest request) async {
+    return AuthResponse(
+      success: false,
+      message: 'Device-based authentication is used. No signup required.',
+    );
+  }
+
+  /// Legacy: Login (not used in device-based auth)
+  static Future<AuthResponse> login(LoginRequest request) async {
+    return AuthResponse(
+      success: false,
+      message: 'Device-based authentication is used. Use initializeDeviceAuth() instead.',
+    );
+  }
+
+  /// Legacy: Update profile
   static Future<AuthResponse> updateProfile({
     String? name,
     String? phoneNumber,
   }) async {
-    try {
-      final token = await getToken();
-      if (token == null) {
-        return AuthResponse(success: false, message: 'Not authenticated');
-      }
-
-      final response = await http.put(
-        Uri.parse('$baseUrl/auth/profile'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({
-          if (name != null) 'name': name,
-          if (phoneNumber != null) 'phoneNumber': phoneNumber,
-        }),
-      );
-
-      final data = jsonDecode(response.body);
-      final authResponse = AuthResponse.fromJson(data);
-
-      if (authResponse.success && authResponse.user != null) {
-        await storeAuthData(token, authResponse.user!);
-      }
-
-      return authResponse;
-    } catch (e) {
-      print('Update profile error: $e');
-      return AuthResponse(
-        success: false,
-        message: 'Network error. Please check your connection.',
-      );
-    }
+    // This would need to be implemented if the backend supports profile updates
+    return AuthResponse(
+      success: false,
+      message: 'Profile update not yet implemented for device-based auth',
+    );
   }
 
-  // Change password
+  /// Legacy: Change password (not applicable for device-based auth)
   static Future<AuthResponse> changePassword({
     required String currentPassword,
     required String newPassword,
   }) async {
-    try {
-      final token = await getToken();
-      if (token == null) {
-        return AuthResponse(success: false, message: 'Not authenticated');
-      }
-
-      final response = await http.put(
-        Uri.parse('$baseUrl/auth/change-password'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({
-          'currentPassword': currentPassword,
-          'newPassword': newPassword,
-        }),
-      );
-
-      final data = jsonDecode(response.body);
-      return AuthResponse.fromJson(data);
-    } catch (e) {
-      print('Change password error: $e');
-      return AuthResponse(
-        success: false,
-        message: 'Network error. Please check your connection.',
-      );
-    }
+    return AuthResponse(
+      success: false,
+      message: 'Password change not applicable for device-based authentication',
+    );
   }
 
-  // Forgot password
+  /// Legacy: Forgot password (not applicable for device-based auth)
   static Future<AuthResponse> forgotPassword(String email) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/forgot-password'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email}),
-      );
-
-      final data = jsonDecode(response.body);
-      return AuthResponse.fromJson(data);
-    } catch (e) {
-      print('Forgot password error: $e');
-      return AuthResponse(
-        success: false,
-        message: 'Network error. Please check your connection.',
-      );
-    }
+    return AuthResponse(
+      success: false,
+      message: 'Password reset not applicable for device-based authentication',
+    );
   }
 }

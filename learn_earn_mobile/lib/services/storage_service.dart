@@ -4,6 +4,14 @@ import '../models/lesson.dart';
 import '../models/transaction.dart';
 
 class StorageService {
+  // Session storage keys
+  static const String _accessTokenKey = 'access_token';
+  static const String _refreshTokenKey = 'refresh_token';
+  static const String _tokenExpiresAtKey = 'token_expires_at';
+  static const String _userIdKey = 'user_id';
+  static const String _deviceIdKey = 'device_id';
+
+  // Data storage keys
   static const String _coinsKey = 'user_coins';
   static const String _lessonsKey = 'user_lessons';
   static const String _transactionsKey = 'user_transactions';
@@ -12,14 +20,79 @@ class StorageService {
   static const String _learningStreakKey = 'learning_streak';
   static const String _lastStreakDateKey = 'last_streak_date';
 
-  static Future<void> saveCoins(int coins) async {
+  // Session management
+  static Future<void> saveSession({
+    required String accessToken,
+    required String refreshToken,
+    required DateTime expiresAt,
+    required String userId,
+    String? deviceId,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_coinsKey, coins);
+    await prefs.setString(_accessTokenKey, accessToken);
+    await prefs.setString(_refreshTokenKey, refreshToken);
+    await prefs.setString(_tokenExpiresAtKey, expiresAt.toIso8601String());
+    await prefs.setString(_userIdKey, userId);
+    if (deviceId != null) {
+      await prefs.setString(_deviceIdKey, deviceId);
+    }
   }
 
-  static Future<int> loadCoins() async {
+  static Future<String?> getAccessToken() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt(_coinsKey) ?? 1000; // Default starting coins
+    return prefs.getString(_accessTokenKey);
+  }
+
+  static Future<String?> getRefreshToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_refreshTokenKey);
+  }
+
+  static Future<DateTime?> getTokenExpiresAt() async {
+    final prefs = await SharedPreferences.getInstance();
+    final expiresAtString = prefs.getString(_tokenExpiresAtKey);
+    if (expiresAtString == null) return null;
+    try {
+      return DateTime.parse(expiresAtString);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static Future<String?> getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_userIdKey);
+  }
+
+  static Future<String?> getStoredDeviceId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_deviceIdKey);
+  }
+
+  static Future<bool> isTokenValid() async {
+    final expiresAt = await getTokenExpiresAt();
+    if (expiresAt == null) return false;
+    // Check if token expires in more than 5 minutes
+    return expiresAt.isAfter(DateTime.now().add(const Duration(minutes: 5)));
+  }
+
+  static Future<void> clearSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_accessTokenKey);
+    await prefs.remove(_refreshTokenKey);
+    await prefs.remove(_tokenExpiresAtKey);
+    await prefs.remove(_userIdKey);
+    // Note: We don't clear device_id as it's needed for re-authentication
+  }
+
+  static Future<void> saveXp(int xp) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_coinsKey, xp);
+  }
+
+  static Future<int> loadXp() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_coinsKey) ?? 1000; // Default starting xp
   }
 
   static Future<void> saveLessons(List<Lesson> lessons) async {

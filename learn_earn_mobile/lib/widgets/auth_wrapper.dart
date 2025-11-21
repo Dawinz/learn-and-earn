@@ -1,34 +1,46 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/app_provider.dart';
-import '../services/connectivity_service.dart';
-import '../screens/login_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../screens/onboarding_screen.dart';
 import '../screens/main_navigation.dart';
-import '../screens/no_internet_screen.dart';
 
-class AuthWrapper extends StatelessWidget {
+class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
 
   @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  bool _isLoading = true;
+  bool _hasSeenOnboarding = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkOnboardingStatus();
+  }
+
+  Future<void> _checkOnboardingStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasSeenOnboarding = prefs.getBool('onboarding_complete') ?? false;
+
+    setState(() {
+      _hasSeenOnboarding = hasSeenOnboarding;
+      _isLoading = false;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => ConnectivityService())],
-      child: Consumer2<AppProvider, ConnectivityService>(
-        builder: (context, appProvider, connectivityService, child) {
-          // Show no internet screen if offline
-          if (!connectivityService.isConnected) {
-            return const NoInternetScreen();
-          }
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
 
-          // Show login screen if not authenticated
-          if (!appProvider.isAuthenticated) {
-            return const LoginScreen();
-          }
-
-          // Show main app if authenticated and online
-          return const MainNavigation();
-        },
-      ),
-    );
+    // Show onboarding if first time, otherwise go directly to main app
+    return _hasSeenOnboarding ? const MainNavigation() : const OnboardingScreen();
   }
 }

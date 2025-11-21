@@ -49,7 +49,7 @@ class AboutPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 20),
                     const Text(
-                      'Learn & Earn',
+                      'Learn & Grow',
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
@@ -58,12 +58,12 @@ class AboutPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Version 1.0.0',
+                      'Version 2.0.0',
                       style: TextStyle(fontSize: 18, color: Colors.white70),
                     ),
                     const SizedBox(height: 4),
                     const Text(
-                      'Build 1.0.0+1',
+                      'Build 2.0.0+3',
                       style: TextStyle(fontSize: 14, color: Colors.white60),
                     ),
                   ],
@@ -94,15 +94,15 @@ class AboutPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     const Text(
-                      'Learn & Earn is a revolutionary learning platform that makes education fun and rewarding. '
-                      'Our mission is to help people learn new skills while earning real rewards for their efforts.',
+                      'Learn & Grow is an innovative learning platform that makes education fun and engaging. '
+                      'Our mission is to help people learn new skills through gamification and progress tracking.',
                       style: TextStyle(fontSize: 16, height: 1.5),
                     ),
                     const SizedBox(height: 16),
                     const Text(
                       'Whether you\'re looking to improve your programming skills, learn about web development, '
-                      'or explore new technologies, Learn & Earn provides interactive lessons, quizzes, and '
-                      'challenges that keep you engaged and motivated.',
+                      'or explore new technologies, Learn & Grow provides interactive lessons, quizzes, and '
+                      'challenges that keep you engaged and motivated through XP rewards and achievements.',
                       style: TextStyle(fontSize: 16, height: 1.5),
                     ),
                   ],
@@ -145,9 +145,9 @@ class AboutPage extends StatelessWidget {
                   ),
                   const Divider(height: 1),
                   _buildFeatureItem(
-                    'Earn Real Rewards',
-                    'Get coins for learning and redeem for cash',
-                    Icons.monetization_on,
+                    'XP & Achievements',
+                    'Earn XP for learning and unlock achievements',
+                    Icons.stars,
                     Colors.amber,
                   ),
                   const Divider(height: 1),
@@ -204,7 +204,7 @@ class AboutPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     const Text(
-                      'Learn & Earn Team',
+                      'Learn & Grow Team',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -213,7 +213,7 @@ class AboutPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Passionate developers dedicated to making learning accessible and rewarding for everyone.',
+                      'Passionate developers dedicated to making learning accessible and engaging for everyone.',
                       style: TextStyle(fontSize: 14, color: Colors.grey),
                       textAlign: TextAlign.center,
                     ),
@@ -284,16 +284,16 @@ class AboutPage extends StatelessWidget {
                       children: [
                         Expanded(
                           child: _buildStatItem(
-                            'Coins Earned',
+                            'XP Earned',
                             '1M+',
-                            Icons.monetization_on,
+                            Icons.stars,
                           ),
                         ),
                         Expanded(
                           child: _buildStatItem(
-                            'Payouts',
+                            'Badges',
                             '500+',
-                            Icons.payment,
+                            Icons.emoji_events,
                           ),
                         ),
                       ],
@@ -339,7 +339,7 @@ class AboutPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      '© 2024 Learn & Earn. All rights reserved.',
+                      '© 2024 Learn & Grow. All rights reserved.',
                       style: TextStyle(fontSize: 12, color: Colors.grey),
                       textAlign: TextAlign.center,
                     ),

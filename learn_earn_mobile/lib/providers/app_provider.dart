@@ -7,10 +7,9 @@ import '../services/ad_service.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/connectivity_service.dart';
-import '../constants/app_constants.dart';
 
 class AppProvider extends ChangeNotifier {
-  int _coins = 1000; // Starting coins
+  int _xp = 1000; // Starting XP
   List<Lesson> _lessons = [];
   List<Transaction> _transactions = [];
   DateTime? _lastResetDate;
@@ -22,7 +21,9 @@ class AppProvider extends ChangeNotifier {
   bool _isOnline = true;
 
   // Getters
-  int get coins => _coins;
+  int get xp => _xp;
+  @Deprecated('Use xp instead')
+  int get coins => _xp; // Deprecated alias for backwards compatibility
   List<Lesson> get lessons => _lessons;
   List<Transaction> get transactions => _transactions;
   int get learningStreak => _learningStreak;
@@ -49,13 +50,18 @@ class AppProvider extends ChangeNotifier {
 
   // Check authentication status
   Future<void> _checkAuthStatus() async {
-    final isLoggedIn = await AuthService.isLoggedIn();
-    if (isLoggedIn) {
+    // Initialize device authentication
+    final authResult = await AuthService.initializeDeviceAuth();
+    if (authResult['success'] == true) {
       final user = await AuthService.getCurrentUser();
       if (user != null) {
         _user = user;
         _isAuthenticated = true;
         notifyListeners();
+      }
+    } else {
+      if (kDebugMode) {
+        print('Device auth failed: ${authResult['message']}');
       }
     }
   }
@@ -82,77 +88,248 @@ class AppProvider extends ChangeNotifier {
   }
 
   Future<void> _loadData() async {
-    // Check backend health first
-    final isBackendOnline = await ApiService.checkHealth();
+    // ALWAYS load local data FIRST (this is the source of truth)
+    await _loadLocalData();
+    
+    // Store local streak values before backend sync
+    final localStreak = _learningStreak;
+    final localStreakDate = _lastStreakDate;
+    
+    // Check backend health
+    final healthResult = await ApiService.checkHealth();
+    final isBackendOnline = healthResult['success'] == true;
 
     if (isBackendOnline) {
       try {
-        // Register device with backend
-        final deviceData = await ApiService.registerDevice();
-        if (kDebugMode) {
-          print('Device registered: ${deviceData['deviceId']}');
+        // Load user profile and XP balance from backend
+        final meResult = await ApiService.getMe();
+        if (meResult['success'] == true) {
+          // Update XP balance from server (only if higher)
+          if (meResult['xp_balance'] != null) {
+            final serverXp = meResult['xp_balance'] as int;
+            if (serverXp > _xp) {
+              _xp = serverXp;
+            }
+          }
+
+          // Update user profile
+          if (meResult['profile'] != null) {
+            final profile = meResult['profile'];
+            _user = User(
+              id: profile['id'] ?? '',
+              email: profile['email'] ?? '',
+              name: profile['name'] ?? 'Guest User',
+              phoneNumber: profile['phone'],
+              createdAt: profile['created_at'] != null
+                  ? DateTime.parse(profile['created_at'])
+                  : DateTime.now(),
+              lastLoginAt: DateTime.now(),
+              isEmailVerified: profile['email_verified'] ?? false,
+            );
+            _isAuthenticated = true;
+          }
+
+          // Load user stats from backend - but validate against local streak date
+          if (meResult['stats'] != null) {
+            final stats = meResult['stats'];
+            final serverStreak = stats['learning_streak'] ?? 0;
+            DateTime? serverStreakDate;
+            if (stats['last_streak_date'] != null) {
+              try {
+                // Parse date string (could be YYYY-MM-DD or ISO format)
+                final dateStr = stats['last_streak_date'] as String;
+                if (dateStr.contains('T')) {
+                  serverStreakDate = DateTime.parse(dateStr);
+                } else {
+                  // YYYY-MM-DD format
+                  final parts = dateStr.split('-');
+                  if (parts.length == 3) {
+                    serverStreakDate = DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
+                  }
+                }
+              } catch (e) {
+                if (kDebugMode) {
+                  print('Error parsing server streak date: $e');
+                }
+              }
+            }
+            
+            // Prioritize local streak over backend to prevent stale data overwriting
+            // Only use backend streak if we have no local streak data at all
+            if (localStreakDate == null && localStreak == 0) {
+              // No local streak data, use server value
+              _learningStreak = serverStreak;
+              _lastStreakDate = serverStreakDate;
+              if (kDebugMode) {
+                print('No local streak - using backend: $_learningStreak');
+              }
+            } else {
+              // We have local streak data - always keep it (local is source of truth)
+              _learningStreak = localStreak;
+              _lastStreakDate = localStreakDate;
+              if (kDebugMode) {
+                print('Keeping local streak (source of truth): $_learningStreak (local date: $localStreakDate, server had: $serverStreak)');
+              }
+            }
+            
+            if (stats['last_daily_login_date'] != null) {
+              _lastDailyLogin = DateTime.parse(stats['last_daily_login_date']);
+            }
+          }
+        }
+
+        // Also try to get detailed stats
+        try {
+          final statsResult = await ApiService.getUserStats();
+          if (statsResult['success'] == true && statsResult['stats'] != null) {
+            final stats = statsResult['stats'];
+            final serverStreak = stats['learning_streak'] ?? 0;
+            DateTime? serverStreakDate;
+            if (stats['last_streak_date'] != null) {
+              try {
+                final dateStr = stats['last_streak_date'] as String;
+                if (dateStr.contains('T')) {
+                  serverStreakDate = DateTime.parse(dateStr);
+                } else {
+                  final parts = dateStr.split('-');
+                  if (parts.length == 3) {
+                    serverStreakDate = DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
+                  }
+                }
+              } catch (e) {
+                if (kDebugMode) {
+                  print('Error parsing server streak date: $e');
+                }
+              }
+            }
+            
+            // Only update if we have no local streak data
+            // Otherwise, keep local streak (it's the source of truth)
+            if (_lastStreakDate == null && _learningStreak == 0) {
+              _learningStreak = serverStreak;
+              _lastStreakDate = serverStreakDate;
+              if (kDebugMode) {
+                print('Updated streak from detailed stats: $_learningStreak');
+              }
+            } else {
+              // Keep local streak - it's the source of truth
+              if (kDebugMode) {
+                print('Keeping local streak from detailed stats check: $_learningStreak (server had: $serverStreak)');
+              }
+            }
+            
+            if (stats['last_daily_login_date'] != null) {
+              _lastDailyLogin = DateTime.parse(stats['last_daily_login_date']);
+            }
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('Error loading stats: $e');
+          }
         }
 
         // Load lessons from backend
-        final backendLessons = await ApiService.getLessons();
-        if (backendLessons.isNotEmpty) {
-          _lessons = backendLessons;
-          if (kDebugMode) {
-            print('Loaded ${backendLessons.length} lessons from backend');
+        final lessonsResult = await ApiService.getLessons();
+        if (lessonsResult['success'] == true && lessonsResult['lessons'] != null) {
+          final backendLessons = lessonsResult['lessons'] as List<Lesson>;
+          if (backendLessons.isNotEmpty) {
+            _lessons = backendLessons;
+            if (kDebugMode) {
+              print('Loaded ${backendLessons.length} lessons from backend');
+            }
+          } else {
+            if (kDebugMode) {
+              print('No lessons from backend, using local data');
+            }
+            _initializeData();
           }
         } else {
           if (kDebugMode) {
-            print('No lessons from backend, using local data');
+            print('Failed to load lessons, using local data');
           }
           _initializeData();
         }
 
-        // Load earnings from backend
-        final backendEarnings = await ApiService.getEarningsHistory();
-        if (backendEarnings.isNotEmpty) {
-          _transactions = backendEarnings;
+        // Load XP history from backend
+        final xpHistoryResult = await ApiService.getXpHistory(limit: 100);
+        if (xpHistoryResult['success'] == true && xpHistoryResult['events'] != null) {
+          final events = xpHistoryResult['events'] as List;
+          _transactions = events.map((event) {
+            return Transaction(
+              id: event['id'] ?? '',
+              title: _getSourceTitle(event['source'] ?? 'unknown'),
+              amount: event['xp_delta'] ?? 0,
+              timestamp: DateTime.parse(event['created_at']),
+              type: (event['xp_delta'] ?? 0) > 0 ? 'credit' : 'debit',
+            );
+          }).toList();
           if (kDebugMode) {
-            print('Loaded ${backendEarnings.length} transactions from backend');
+            print('Loaded ${_transactions.length} transactions from backend');
           }
         }
-
-        // Load user profile from backend
-        final userProfile = await ApiService.getUserProfile();
-        if (userProfile.isNotEmpty) {
-          if (kDebugMode) {
-            print('User profile loaded: $userProfile');
-          }
-        }
-
-        // Calculate coins from transactions
-        _coins = _transactions.fold(
-          1000,
-          (sum, transaction) => sum + transaction.amount,
-        );
 
         // Save data locally for offline access
         await _saveData();
       } catch (e) {
-        print('Error loading from backend: $e');
+        if (kDebugMode) {
+          print('Error loading from backend: $e');
+        }
         // Fallback to local data
         await _loadLocalData();
       }
     } else {
-      print('Backend offline, using local data');
+      if (kDebugMode) {
+        print('Backend offline, using local data');
+      }
       await _loadLocalData();
     }
 
     notifyListeners();
   }
 
+  String _getSourceTitle(String source) {
+    switch (source) {
+      case 'lesson':
+        return 'Lesson Completed';
+      case 'quiz':
+        return 'Quiz Completed';
+      case 'ad':
+        return 'Ad Reward';
+      case 'daily':
+        return 'Daily Bonus';
+      case 'referral_reward':
+        return 'Referral Reward';
+      default:
+        return 'XP Credit';
+    }
+  }
+
+  String _getSourceFromTitle(String title) {
+    final lowerTitle = title.toLowerCase();
+    if (lowerTitle.contains('lesson')) return 'lesson';
+    if (lowerTitle.contains('quiz')) return 'quiz';
+    if (lowerTitle.contains('ad')) return 'ad';
+    if (lowerTitle.contains('daily')) return 'daily';
+    if (lowerTitle.contains('referral')) return 'referral_reward';
+    return 'daily'; // Default fallback
+  }
+
   Future<void> _loadLocalData() async {
     // Load saved data
-    _coins = await StorageService.loadCoins();
     _lessons = await StorageService.loadLessons();
     _transactions = await StorageService.loadTransactions();
     _lastDailyLogin = await StorageService.loadLastDailyLogin();
     _learningStreak = await StorageService.loadLearningStreak();
     _lastStreakDate = await StorageService.loadLastStreakDate();
+    
+    // Load XP from storage - this is the source of truth
+    _xp = await StorageService.loadXp();
+    
+    // If no saved XP, initialize with default
+    if (_xp == 0) {
+      _xp = 1000; // Default starting XP
+      await StorageService.saveXp(_xp);
+    }
 
     // If no saved data, initialize with default data
     if (_lessons.isEmpty) {
@@ -2516,8 +2693,8 @@ Build passive income sequentially—focus on one stream until successful.
     ];
   }
 
-  void addCoins(int amount, String source) async {
-    _coins += amount;
+  void addXp(int amount, String source) async {
+    _xp += amount;
     final transaction = Transaction(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       title: source,
@@ -2527,20 +2704,70 @@ Build passive income sequentially—focus on one stream until successful.
     );
     _transactions.insert(0, transaction);
 
-    // Try to sync with backend
+    // Track ad views for stats
+    bool isAdView = source.toLowerCase().contains('ad') || 
+                   source.toLowerCase().contains('watched');
+
+    // Try to sync with backend using XP credit API
     try {
-      await ApiService.recordEarning(source, amount);
+      // Map source string to API source type
+      final apiSource = _getSourceFromTitle(source);
+      final nonce = DateTime.now().millisecondsSinceEpoch.toString() +
+          '_${apiSource}_${amount}';
+      final result = await ApiService.creditXp(
+        events: [
+          {
+            'nonce': nonce,
+            'source': apiSource,
+            'xp_delta': amount,
+            'metadata': {},
+          },
+        ],
+      );
+      if (result['success'] == true) {
+        // Update XP from server response only if it's higher (to prevent overwriting with stale data)
+        if (result['total_xp'] != null) {
+          final serverXp = result['total_xp'] as int;
+          // Only update if server XP is higher (to prevent losing local XP)
+          if (serverXp > _xp) {
+            _xp = serverXp;
+          }
+        }
+      }
+
+      // Update ad views count if this is an ad-related XP
+      if (isAdView && _isAuthenticated && _isOnline) {
+        try {
+          // Get current ad views count and increment
+          final statsResult = await ApiService.getUserStats();
+          if (statsResult['success'] == true && statsResult['stats'] != null) {
+            final currentAdViews = statsResult['stats']['total_ad_views'] ?? 0;
+            await ApiService.updateUserStats(
+              totalAdViews: currentAdViews + 1,
+            );
+            
+            // Check and unlock achievements
+            await _checkAndUnlockAchievements();
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('Failed to update ad views count: $e');
+          }
+        }
+      }
     } catch (e) {
-      print('Failed to sync earning with backend: $e');
+      if (kDebugMode) {
+        print('Failed to sync earning with backend: $e');
+      }
     }
 
     _saveData();
     notifyListeners();
   }
 
-  void spendCoins(int amount, String reason) {
-    if (_coins >= amount) {
-      _coins -= amount;
+  void spendXp(int amount, String reason) {
+    if (_xp >= amount) {
+      _xp -= amount;
       _transactions.insert(
         0,
         Transaction(
@@ -2561,23 +2788,83 @@ Build passive income sequentially—focus on one stream until successful.
     if (index != -1 && !_lessons[index].isCompleted) {
       // Update local state first
       _lessons[index] = _lessons[index].copyWith(isCompleted: true);
-      addCoins(
-        15,
-        'Lesson Completed',
-      ); // 15 coins for lesson completion as per README
 
-      // Sync with backend
+      // Get lesson to get its XP reward
+      final lesson = _lessons[index];
+      
+      // Add XP locally immediately (works offline too)
+      // Note: addXp is async but we don't await it to avoid blocking
+      // It will update _xp and call notifyListeners() internally
+      addXp(lesson.coinReward, 'Lesson Completed: ${lesson.title}');
+      
+      // Update learning streak when lesson is completed
+      _updateLearningStreak();
+      
+      // Ensure UI updates immediately
+      notifyListeners();
+
+      // Try to sync with backend (optional - local XP already added)
       try {
-        final result = await ApiService.completeLesson(lessonId);
+        final result = await ApiService.completeLesson(
+          lessonId: lessonId,
+          timeSpentSeconds: 0, // TODO: Track actual time spent
+          xpReward: lesson.coinReward, // Send XP reward for mobile app local lessons
+        );
         if (result['success'] == true) {
-          print('Lesson completion synced with backend');
+          // Update XP from server response only if it's higher (to prevent overwriting with stale data)
+          if (result['total_xp'] != null) {
+            final serverXp = result['total_xp'] as int;
+            // Only update if server XP is higher (to prevent losing local XP)
+            if (serverXp > _xp) {
+              _xp = serverXp;
+            }
+            // Update the transaction if backend provided different amount
+            if (result['xp_awarded'] != null && _transactions.isNotEmpty) {
+              final xpAwarded = result['xp_awarded'] as int;
+              // Update the most recent transaction if it's the lesson completion
+              if (_transactions[0].title.contains('Lesson Completed')) {
+                _transactions[0] = Transaction(
+                  id: result['completion_id'] ?? _transactions[0].id,
+                  title: _transactions[0].title,
+                  amount: xpAwarded,
+                  timestamp: DateTime.parse(result['completed_at'] ?? DateTime.now().toIso8601String()),
+                  type: 'earned',
+                );
+              }
+            }
+          }
+          
+          // Update stats: increment total lessons completed
+          final completedCount = _lessons.where((l) => l.isCompleted).length;
+          try {
+            await ApiService.updateUserStats(
+              totalLessonsCompleted: completedCount,
+            );
+            
+            // Check and unlock achievements
+            await _checkAndUnlockAchievements();
+          } catch (e) {
+            if (kDebugMode) {
+              print('Failed to update lesson count: $e');
+            }
+          }
+          
+          if (kDebugMode) {
+            print('Lesson completion synced with backend');
+          }
         } else {
-          print(
-            'Failed to sync lesson completion with backend: ${result['message']}',
-          );
+          if (kDebugMode) {
+            print(
+              'Failed to sync lesson completion with backend: ${result['message']}',
+            );
+          }
+          // XP already added locally, so continue
         }
       } catch (e) {
-        print('Error syncing lesson completion: $e');
+        if (kDebugMode) {
+          print('Error syncing lesson completion: $e');
+        }
+        // XP already added locally, so continue
       }
 
       _saveData();
@@ -2589,7 +2876,7 @@ Build passive income sequentially—focus on one stream until successful.
     try {
       final reward = await AdService.instance.showRewardedAd();
       if (reward != null) {
-        addCoins(15, 'Ad Watched'); // 15 coins for rewarded video as per README
+        addXp(15, 'Ad Watched'); // 15 coins for rewarded video as per README
         return true;
       } else {
         return false;
@@ -2607,7 +2894,7 @@ Build passive income sequentially—focus on one stream until successful.
     try {
       final reward = await AdService.instance.showRewardedAd();
       if (reward != null) {
-        addCoins(10, 'Lesson Ad Bonus'); // 10 coins for lesson ad bonus
+        addXp(10, 'Lesson Ad Bonus'); // 10 coins for lesson ad bonus
         return true;
       }
       return false;
@@ -2622,7 +2909,7 @@ Build passive income sequentially—focus on one stream until successful.
     try {
       final reward = await AdService.instance.showRewardedAd();
       if (reward != null) {
-        addCoins(
+        addXp(
           10,
           'Daily Login Ad Bonus',
         ); // 10 coins for daily login ad bonus
@@ -2640,7 +2927,7 @@ Build passive income sequentially—focus on one stream until successful.
     try {
       final adShown = await AdService.instance.showInterstitialAd();
       if (adShown) {
-        addCoins(5, 'Navigation Ad Bonus'); // 5 coins for navigation ad bonus
+        addXp(5, 'Navigation Ad Bonus'); // 5 coins for navigation ad bonus
       }
       return adShown;
     } catch (e) {
@@ -2654,7 +2941,7 @@ Build passive income sequentially—focus on one stream until successful.
     try {
       final reward = await AdService.instance.showRewardedAd();
       if (reward != null) {
-        addCoins(
+        addXp(
           15,
           'Daily Challenge Ad Bonus',
         ); // 15 coins for daily challenge ad bonus
@@ -2672,7 +2959,7 @@ Build passive income sequentially—focus on one stream until successful.
     try {
       final adShown = await AdService.instance.showInterstitialAd();
       if (adShown) {
-        addCoins(5, 'Profile Ad Bonus'); // 5 coins for profile ad bonus
+        addXp(5, 'Profile Ad Bonus'); // 5 coins for profile ad bonus
       }
       return adShown;
     } catch (e) {
@@ -2686,7 +2973,7 @@ Build passive income sequentially—focus on one stream until successful.
     try {
       final reward = await AdService.instance.showRewardedAd();
       if (reward != null) {
-        addCoins(10, 'Quiz Ad Bonus'); // 10 coins for quiz ad bonus
+        addXp(10, 'Quiz Ad Bonus'); // 10 coins for quiz ad bonus
         return true;
       }
       return false;
@@ -2701,7 +2988,7 @@ Build passive income sequentially—focus on one stream until successful.
     try {
       final reward = await AdService.instance.showRewardedAd();
       if (reward != null) {
-        addCoins(
+        addXp(
           20,
           'Payout Ad Bonus',
         ); // 20 coins for payout ad bonus (higher value for payout)
@@ -2715,7 +3002,9 @@ Build passive income sequentially—focus on one stream until successful.
   }
 
   Future<void> _saveData() async {
-    await StorageService.saveCoins(_coins);
+    // Save data immediately - don't recalculate here as it can cause issues
+    // The XP is already correct from addXp() or completeLesson()
+    await StorageService.saveXp(_xp);
     await StorageService.saveLessons(_lessons);
     await StorageService.saveTransactions(_transactions);
   }
@@ -2748,7 +3037,7 @@ Build passive income sequentially—focus on one stream until successful.
       final reward = await AdService.instance.showRewardedAd();
       if (reward != null) {
         // Ad watched successfully, give coins
-        addCoins(5, 'Daily Login'); // 5 coins for daily login as per README
+        addXp(5, 'Daily Login'); // 5 coins for daily login as per README
 
         // Update last daily login date
         _lastDailyLogin = DateTime.now();
@@ -2757,6 +3046,29 @@ Build passive income sequentially—focus on one stream until successful.
 
         // Update learning streak
         _updateLearningStreak();
+
+        // Sync with backend
+        if (_isAuthenticated && _isOnline) {
+          try {
+            final result = await ApiService.recordDailyLogin(
+              xpAwarded: 5,
+              adWatched: true,
+            );
+            if (result['success'] == true) {
+              // Update streak from backend response if available
+              if (result['learning_streak'] != null) {
+                _learningStreak = result['learning_streak'] as int;
+              }
+              if (result['total_xp'] != null) {
+                _xp = result['total_xp'] as int;
+              }
+            }
+          } catch (e) {
+            if (kDebugMode) {
+              print('Failed to sync daily login with backend: $e');
+            }
+          }
+        }
 
         notifyListeners();
 
@@ -2783,17 +3095,23 @@ Build passive income sequentially—focus on one stream until successful.
   // Legacy method for backward compatibility (deprecated)
   @deprecated
   void dailyLogin() {
-    addCoins(5, 'Daily Login'); // 5 coins for daily login as per README
+    addXp(5, 'Daily Login'); // 5 coins for daily login as per README
   }
 
   // Update learning streak
   void _updateLearningStreak() async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
+    bool streakUpdated = false;
 
     if (_lastStreakDate == null) {
+      // First time completing something - start streak
       _learningStreak = 1;
       _lastStreakDate = today;
+      streakUpdated = true;
+      if (kDebugMode) {
+        print('Starting new learning streak: $_learningStreak day');
+      }
     } else {
       final lastStreak = DateTime(
         _lastStreakDate!.year,
@@ -2804,91 +3122,91 @@ Build passive income sequentially—focus on one stream until successful.
       final daysDifference = today.difference(lastStreak).inDays;
 
       if (daysDifference == 0) {
-        // Same day, no change
-        return;
+        // Same day - check if streak is already set for today
+        // If streak is 0, this is the first completion today, so set to 1
+        if (_learningStreak == 0) {
+          _learningStreak = 1;
+          _lastStreakDate = today;
+          streakUpdated = true;
+          if (kDebugMode) {
+            print('First completion today - starting streak: $_learningStreak day');
+          }
+        } else {
+          // Already completed today, keep current streak
+          if (kDebugMode) {
+            print('Already completed today - streak remains: $_learningStreak days');
+          }
+        }
       } else if (daysDifference == 1) {
         // Consecutive day, increment streak
         _learningStreak++;
         _lastStreakDate = today;
+        streakUpdated = true;
+        if (kDebugMode) {
+          print('Consecutive day - streak incremented: $_learningStreak days');
+        }
       } else {
-        // Streak broken, reset to 1
+        // Streak broken (more than 1 day gap), reset to 1
         _learningStreak = 1;
         _lastStreakDate = today;
+        streakUpdated = true;
+        if (kDebugMode) {
+          print('Streak broken - resetting to: $_learningStreak day');
+        }
       }
     }
 
-    // Save locally
-    StorageService.saveLearningStreak(_learningStreak);
-    StorageService.saveLastStreakDate(_lastStreakDate!);
+    // Save locally if streak was updated
+    if (streakUpdated) {
+      await StorageService.saveLearningStreak(_learningStreak);
+      await StorageService.saveLastStreakDate(_lastStreakDate!);
 
-    // Sync with backend if user is authenticated
-    if (_isAuthenticated && _isOnline) {
-      try {
-        // Backend sync can be implemented when backend endpoint is available
-        // Example: await ApiService.updateLearningStreak(_learningStreak, _lastStreakDate!);
-        if (kDebugMode) {
-          print('Learning streak synced: $_learningStreak days');
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          print('Failed to sync learning streak with backend: $e');
+      // Sync with backend if user is authenticated
+      if (_isAuthenticated && _isOnline) {
+        try {
+          await ApiService.updateUserStats(
+            learningStreak: _learningStreak,
+            lastStreakDate: _lastStreakDate?.toIso8601String().split('T')[0], // YYYY-MM-DD format
+          );
+          if (kDebugMode) {
+            print('Learning streak synced with backend: $_learningStreak days');
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('Failed to sync learning streak with backend: $e');
+          }
         }
       }
+      
+      // Notify listeners to update UI
+      notifyListeners();
     }
   }
 
   void completeQuiz() {
-    addCoins(
+    addXp(
       20,
       'Quiz Completed',
     ); // 20 coins for quiz completion as per README
+    
+    // Update learning streak when quiz is completed
+    _updateLearningStreak();
   }
 
-  // Request payout
-  Future<Map<String, dynamic>> requestPayout(String mobileNumber) async {
-    try {
-      // Check minimum payout requirement
-      if (_coins < AppConstants.MIN_PAYOUT_COINS) {
-        return {
-          'success': false,
-          'message':
-              'Minimum payout is ${AppConstants.MIN_PAYOUT_COINS} coins (${AppConstants.formatCashShort(AppConstants.MIN_PAYOUT_CASH)})',
-        };
-      }
+  // Payout functionality removed for Play Store compliance
 
-      // Convert coins to USD (assuming 1000 coins = $1)
-      final amountUsd = _coins / 1000.0;
-
-      final result = await ApiService.requestPayout(mobileNumber, _coins, amountUsd);
-      if (result['success'] == true) {
-        // Reset coins after successful payout request
-        _coins = 0;
-        _transactions.insert(
-          0,
-          Transaction(
-            id: DateTime.now().millisecondsSinceEpoch.toString(),
-            title: 'Payout Requested',
-            amount: -_coins,
-            timestamp: DateTime.now(),
-            type: 'spent',
-          ),
-        );
-        _saveData();
-        notifyListeners();
-      }
-      return result;
-    } catch (e) {
-      print('Error requesting payout: $e');
-      return {'success': false, 'message': 'Failed to request payout: $e'};
-    }
-  }
-
-  // Get payout history
+  // Get payout history (withdrawals)
   Future<List<Map<String, dynamic>>> getPayoutHistory() async {
     try {
-      return await ApiService.getPayoutHistory();
+      final result = await ApiService.getWithdrawals();
+      if (result['success'] == true && result['withdrawals'] != null) {
+        return List<Map<String, dynamic>>.from(result['withdrawals']);
+      }
+      return [];
     } catch (e) {
-      print('Error loading payout history: $e');
+      if (kDebugMode) {
+        print('Error loading payout history: $e');
+      }
       return [];
     }
   }
@@ -2897,22 +3215,63 @@ Build passive income sequentially—focus on one stream until successful.
   Future<Map<String, dynamic>> submitQuizToBackend(
     String lessonId,
     List<int> answers,
-    int timeSpent,
-  ) async {
+    int timeSpent, {
+    int? correctAnswers,
+    int? totalQuestions,
+    int? xpReward,
+  }) async {
     try {
-      final result = await ApiService.submitQuiz(lessonId, answers, timeSpent);
+      final result = await ApiService.submitQuiz(
+        lessonId: lessonId,
+        answers: answers,
+        timeSpentSeconds: timeSpent,
+        correctAnswers: correctAnswers,
+        totalQuestions: totalQuestions,
+        xpReward: xpReward,
+      );
 
-      if (result['success'] == true || result['passed'] == true) {
-        // Add coins if quiz was passed
-        final coinsEarned = result['coinsEarned'] ?? 0;
-        if (coinsEarned > 0) {
-          addCoins(coinsEarned, 'Quiz Completed');
+      if (result['success'] == true) {
+        // Update XP from server response
+        if (result['total_xp'] != null) {
+          _xp = result['total_xp'] as int;
         }
-      }
 
-      return result;
+        // Update quiz count in stats
+        if (_isAuthenticated && _isOnline) {
+          try {
+            final statsResult = await ApiService.getUserStats();
+            if (statsResult['success'] == true && statsResult['stats'] != null) {
+              final quizCount = statsResult['stats']['total_quizzes_completed'] ?? 0;
+              await ApiService.updateUserStats(
+                totalQuizzesCompleted: quizCount,
+              );
+              
+              // Check and unlock achievements
+              await _checkAndUnlockAchievements();
+            }
+          } catch (e) {
+            if (kDebugMode) {
+              print('Failed to update quiz count: $e');
+            }
+          }
+        }
+
+        return {
+          'success': true,
+          'passed': result['passed'] ?? false,
+          'xpEarned': result['xp_awarded'] ?? 0,
+          'score': result['score_percent'] ?? 0,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': result['message'] ?? 'Failed to submit quiz',
+        };
+      }
     } catch (e) {
-      print('Error submitting quiz to backend: $e');
+      if (kDebugMode) {
+        print('Error submitting quiz to backend: $e');
+      }
       return {'success': false, 'message': 'Failed to submit quiz: $e'};
     }
   }
@@ -2922,10 +3281,25 @@ Build passive income sequentially—focus on one stream until successful.
     try {
       print('Syncing with backend...');
 
-      // Sync earnings
+      // Sync earnings using XP credit API (batched)
+      final eventsToSync = <Map<String, dynamic>>[];
       for (final transaction in _transactions) {
-        if (transaction.type == 'earned') {
-          await ApiService.recordEarning(transaction.title, transaction.amount);
+        if (transaction.type == 'earned' || transaction.type == 'credit') {
+          eventsToSync.add({
+            'nonce': transaction.id,
+            'source': _getSourceFromTitle(transaction.title),
+            'xp_delta': transaction.amount,
+            'metadata': {},
+          });
+        }
+      }
+      if (eventsToSync.isNotEmpty) {
+        try {
+          await ApiService.creditXp(events: eventsToSync);
+        } catch (e) {
+          if (kDebugMode) {
+            print('Error syncing earnings: $e');
+          }
         }
       }
 
@@ -2941,52 +3315,158 @@ Build passive income sequentially—focus on one stream until successful.
   // Check if daily reset is needed
   Future<void> _checkDailyReset() async {
     try {
-      // Check with backend first
-      final progressData = await ApiService.getUserProgress();
-      final isNewDay = progressData['isNewDay'] ?? false;
+      // Daily reset is now handled locally
+      // The backend doesn't have separate daily reset endpoints
+      final lastReset = await StorageService.loadLastResetDate();
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
 
-      if (isNewDay) {
-        print('Performing daily reset via backend...');
-        final resetResult = await ApiService.performDailyReset();
-
-        if (resetResult['success'] == true) {
-          // Reset local lessons
-          for (int i = 0; i < _lessons.length; i++) {
-            _lessons[i] = _lessons[i].copyWith(isCompleted: false);
-          }
-
-          // Add daily reset bonus
-          addCoins(
-            5,
-            'Daily Reset Bonus',
-          ); // 5 coins for daily reset bonus as per README
-
-          // Update local reset date
-          final today = DateTime.now();
-          final todayDate = DateTime(today.year, today.month, today.day);
-          await StorageService.saveLastResetDate(todayDate);
-          _lastResetDate = todayDate;
-
-          print('Daily reset completed via backend');
-        } else {
-          print('Backend daily reset failed, using local reset');
-          await _performLocalDailyReset();
-        }
-      } else {
-        // Load last reset date from storage for local fallback
-        final lastReset = await StorageService.loadLastResetDate();
-        final now = DateTime.now();
-        final today = DateTime(now.year, now.month, now.day);
-
-        if (lastReset == null || lastReset.isBefore(today)) {
+      if (lastReset == null || lastReset.isBefore(today)) {
+        if (kDebugMode) {
           print('Performing local daily reset...');
-          await _performLocalDailyReset();
+        }
+        await _performLocalDailyReset();
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error checking daily reset: $e');
+      }
+      // Fallback to local reset
+      await _performLocalDailyReset();
+    }
+  }
+
+  // Check and unlock achievements based on current stats
+  Future<void> _checkAndUnlockAchievements() async {
+    if (!_isAuthenticated || !_isOnline) return;
+
+    try {
+      // Get current stats
+      final statsResult = await ApiService.getUserStats();
+      if (statsResult['success'] != true || statsResult['stats'] == null) return;
+
+      final stats = statsResult['stats'];
+      final completedLessons = stats['total_lessons_completed'] ?? 0;
+      final completedQuizzes = stats['total_quizzes_completed'] ?? 0;
+      final adViews = stats['total_ad_views'] ?? 0;
+      final streak = stats['learning_streak'] ?? 0;
+
+      // Get total XP earned
+      final xpHistory = await ApiService.getXpHistory(limit: 1000);
+      int totalXpEarned = 0;
+      if (xpHistory['success'] == true && xpHistory['events'] != null) {
+        final events = xpHistory['events'] as List;
+        totalXpEarned = events
+            .where((e) => (e['xp_delta'] ?? 0) > 0)
+            .fold<int>(0, (sum, e) => sum + ((e['xp_delta'] ?? 0) as num).toInt());
+      }
+
+      // Get existing achievements
+      final achievementsResult = await ApiService.getAchievements();
+      final existingAchievements = <String>{};
+      if (achievementsResult['success'] == true && achievementsResult['achievements'] != null) {
+        final achievements = achievementsResult['achievements'] as List;
+        for (final ach in achievements) {
+          existingAchievements.add(ach['achievement_type'] ?? '');
+        }
+      }
+
+      // Check each achievement
+      final achievementsToUnlock = <Map<String, dynamic>>[];
+
+      // First Steps - Complete first lesson
+      if (completedLessons >= 1 && !existingAchievements.contains('first_lesson')) {
+        achievementsToUnlock.add({
+          'type': 'first_lesson',
+          'name': 'First Steps',
+          'xp_reward': 10,
+        });
+      }
+
+      // Lesson Expert - Complete 10 lessons
+      if (completedLessons >= 10 && !existingAchievements.contains('lesson_expert')) {
+        achievementsToUnlock.add({
+          'type': 'lesson_expert',
+          'name': 'Lesson Expert',
+          'xp_reward': 150,
+        });
+      }
+
+      // Quiz Master - Complete 5 quizzes
+      if (completedQuizzes >= 5 && !existingAchievements.contains('quiz_master')) {
+        achievementsToUnlock.add({
+          'type': 'quiz_master',
+          'name': 'Quiz Master',
+          'xp_reward': 50,
+        });
+      }
+
+      // Quiz Champion - Complete 20 quizzes
+      if (completedQuizzes >= 20 && !existingAchievements.contains('quiz_champion')) {
+        achievementsToUnlock.add({
+          'type': 'quiz_champion',
+          'name': 'Quiz Champion',
+          'xp_reward': 300,
+        });
+      }
+
+      // Ad Watcher - Watch 10 ads
+      if (adViews >= 10 && !existingAchievements.contains('ad_watcher')) {
+        achievementsToUnlock.add({
+          'type': 'ad_watcher',
+          'name': 'Ad Watcher',
+          'xp_reward': 25,
+        });
+      }
+
+      // Ad Enthusiast - Watch 50 ads
+      if (adViews >= 50 && !existingAchievements.contains('ad_enthusiast')) {
+        achievementsToUnlock.add({
+          'type': 'ad_enthusiast',
+          'name': 'Ad Enthusiast',
+          'xp_reward': 100,
+        });
+      }
+
+      // Coin Collector - Earn 1000 XP
+      if (totalXpEarned >= 1000 && !existingAchievements.contains('coin_collector')) {
+        achievementsToUnlock.add({
+          'type': 'coin_collector',
+          'name': 'Coin Collector',
+          'xp_reward': 100,
+        });
+      }
+
+      // Learning Streak - 7 days in a row
+      if (streak >= 7 && !existingAchievements.contains('learning_streak_7')) {
+        achievementsToUnlock.add({
+          'type': 'learning_streak_7',
+          'name': 'Learning Streak',
+          'xp_reward': 200,
+        });
+      }
+
+      // Unlock achievements
+      for (final ach in achievementsToUnlock) {
+        try {
+          await ApiService.unlockAchievement(
+            achievementType: ach['type'] as String,
+            achievementName: ach['name'] as String,
+            xpReward: ach['xp_reward'] as int,
+          );
+          if (kDebugMode) {
+            print('Achievement unlocked: ${ach['name']}');
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('Failed to unlock achievement ${ach['name']}: $e');
+          }
         }
       }
     } catch (e) {
-      print('Error checking daily reset: $e');
-      // Fallback to local reset
-      await _performLocalDailyReset();
+      if (kDebugMode) {
+        print('Error checking achievements: $e');
+      }
     }
   }
 
@@ -2998,7 +3478,7 @@ Build passive income sequentially—focus on one stream until successful.
     }
 
     // Add daily reset bonus
-    addCoins(
+    addXp(
       5,
       'Daily Reset Bonus',
     ); // 5 coins for daily reset bonus as per README

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'learn_screen.dart';
-import 'earn_screen.dart';
+import 'progress_screen.dart';
 import 'profile_screen.dart';
 
 class MainNavigation extends StatefulWidget {
@@ -29,9 +29,9 @@ class _MainNavigationState extends State<MainNavigation> {
       color: const Color(0xFF4CAF50),
     ),
     NavigationItem(
-      icon: Icons.monetization_on_outlined,
-      activeIcon: Icons.monetization_on_rounded,
-      label: 'Earn',
+      icon: Icons.auto_graph_outlined,
+      activeIcon: Icons.auto_graph_rounded,
+      label: 'Progress',
       color: const Color(0xFFFF9800),
     ),
     NavigationItem(
@@ -78,7 +78,7 @@ class _MainNavigationState extends State<MainNavigation> {
         children: const [
           HomeScreen(),
           LearnScreen(),
-          EarnScreen(),
+          ProgressScreen(),
           ProfileScreen(),
         ],
       ),

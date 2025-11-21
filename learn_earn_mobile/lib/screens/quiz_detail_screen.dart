@@ -80,27 +80,33 @@ class _QuizDetailScreenState extends State<QuizDetailScreen> {
       final lessonId = widget.quiz.id.replaceFirst('lesson_', '');
       final timeSpent = DateTime.now().difference(_startTime).inSeconds;
 
+      // Calculate correct answers count
+      final correctCount = correctAnswers.where((isCorrect) => isCorrect).length;
+
       final result = await appProvider.submitQuizToBackend(
         lessonId,
         _selectedAnswers.map((answer) => answer ?? 0).toList(),
         timeSpent,
+        correctAnswers: correctCount,
+        totalQuestions: widget.quiz.questions.length,
+        xpReward: _result!.passed ? widget.quiz.coinReward : 0,
       );
 
       if (result['success'] == true || result['passed'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Quiz synced with backend! Earned ${result['coinsEarned'] ?? widget.quiz.coinReward} coins!',
+              'Quiz synced with backend! Earned ${result['xpEarned'] ?? widget.quiz.coinReward} XP!',
             ),
             backgroundColor: Colors.green,
           ),
         );
       }
     } else {
-      // Award coins locally for non-lesson quizzes
+      // Award XP locally for non-lesson quizzes
       if (_result!.passed) {
         final appProvider = Provider.of<AppProvider>(context, listen: false);
-        appProvider.addCoins(widget.quiz.coinReward, 'Quiz Completed');
+        appProvider.addXp(widget.quiz.coinReward, 'Quiz Completed');
       }
     }
   }
@@ -300,7 +306,7 @@ class _QuizDetailScreenState extends State<QuizDetailScreen> {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          '+${widget.quiz.coinReward} Coins Earned!',
+                          '+${widget.quiz.coinReward} XP Earned!',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
