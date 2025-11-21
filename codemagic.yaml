@@ -1,27 +1,28 @@
 workflows:
-  ios-workflow:
-    name: iOS Workflow
-    max_build_duration: 120
-    instance_type: mac_mini_m1
+  ios-release:
+    name: Build iOS Release for App Store
+    max_build_duration: 60
     environment:
       flutter: stable
       xcode: latest
-      cocoapods: default
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: "main"
     scripts:
-      - name: Get Flutter dependencies
+      - name: Install dependencies
         script: |
           cd learn_earn_mobile
           flutter pub get
-      - name: Install CocoaPods dependencies
-        script: |
-          cd learn_earn_mobile/ios && pod install && cd ../..
-      - name: Set up code signing settings on Xcode project
-        script: |
-          xcode-project use-profiles
-      - name: Build ipa for distribution
+      - name: Clean project
         script: |
           cd learn_earn_mobile
-          flutter build ipa --release
+          flutter clean
+      - name: Build iOS
+        script: |
+          cd learn_earn_mobile
+          flutter build ipa --release --no-codesign
     artifacts:
       - learn_earn_mobile/build/ios/ipa/*.ipa
     publishing:
@@ -31,3 +32,11 @@ workflows:
         notify:
           success: true
           failure: false
+      # IPA BUILD ONLY - NO UPLOAD
+      # Uncomment below if you want to enable App Store Connect upload later
+      # app_store_connect:
+      #   api_key: $APP_STORE_PRIVATE_KEY
+      #   key_id: $APP_STORE_KEY_ID
+      #   issuer_id: $APP_STORE_ISSUER_ID
+      #   submit_to_testflight: false
+      #   submit_to_app_store: false
