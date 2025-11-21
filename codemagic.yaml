@@ -42,11 +42,8 @@ workflows:
         notify:
           success: true
           failure: false
-      # App Store Connect publishing is DISABLED
-      # The IPA will be built and available for download, but NOT uploaded to App Store
-      # Uncomment the section below if you want to enable automatic upload later
-      # app_store_connect:
-      #   auth: integration
-      #   submit_to_testflight: false
-      #   submit_to_app_store: false
+      # IPA BUILD ONLY - NO UPLOAD TO APP STORE
+      # The IPA will be built and available for download in the Artifacts section
+      # You can download it manually and upload to App Store Connect yourself
+      # App Store Connect publishing is completely disabled below
 
