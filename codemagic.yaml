@@ -11,26 +11,28 @@ workflows:
         - app_store_credentials # Add your App Store Connect API key here
       vars:
         APP_ID: "com.qwantumtech.learnandgrow"
-        XCODE_WORKSPACE: "ios/Runner.xcworkspace"
+        XCODE_WORKSPACE: "learn_earn_mobile/ios/Runner.xcworkspace"
         XCODE_SCHEME: "Runner"
         BUNDLE_ID: "com.qwantumtech.learnandgrow"
     scripts:
       - name: Get Flutter dependencies
         script: |
+          cd learn_earn_mobile
           flutter pub get
       - name: Install CocoaPods dependencies
         script: |
-          cd ios && pod install && cd ..
+          cd learn_earn_mobile/ios && pod install && cd ../..
       - name: Set up code signing settings on Xcode project
         script: |
           xcode-project use-profiles
       - name: Build ipa for distribution
         script: |
+          cd learn_earn_mobile
           flutter build ipa --release \
             --build-name=2.0.1 \
             --build-number=$(($(app-store-connect get-latest-build-number "$APP_ID") + 1))
     artifacts:
-      - build/ios/ipa/*.ipa
+      - learn_earn_mobile/build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
       - flutter_drive.log
     publishing:
