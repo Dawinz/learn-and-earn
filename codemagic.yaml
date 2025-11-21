@@ -5,6 +5,13 @@ workflows:
     environment:
       flutter: stable
       xcode: latest
+      groups:
+        - app_store_credentials  # Add your App Store Connect API key in Codemagic UI
+      vars:
+        APP_ID: "com.qwantumtech.learnandgrow"
+        XCODE_WORKSPACE: "ios/Runner.xcworkspace"
+        XCODE_SCHEME: "Runner"
+        BUNDLE_ID: "com.qwantumtech.learnandgrow"
     triggering:
       events:
         - push
@@ -15,8 +22,14 @@ workflows:
         script: flutter pub get
       - name: Clean project
         script: flutter clean
+      - name: Set up code signing settings on Xcode project
+        script: |
+          xcode-project use-profiles
       - name: Build iOS
-        script: flutter build ipa --release --no-codesign
+        script: |
+          flutter build ipa --release \
+            --build-name=2.0.1 \
+            --build-number=$(($(app-store-connect get-latest-build-number "$APP_ID") + 1))
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
@@ -27,10 +40,5 @@ workflows:
           success: true
           failure: false
       # IPA BUILD ONLY - NO UPLOAD
-      # Uncomment below if you want to enable App Store Connect upload later
-      # app_store_connect:
-      #   api_key: $APP_STORE_PRIVATE_KEY
-      #   key_id: $APP_STORE_KEY_ID
-      #   issuer_id: $APP_STORE_ISSUER_ID
-      #   submit_to_testflight: false
-      #   submit_to_app_store: false
+      # The IPA will be built and available for download, but NOT uploaded to App Store
+      # app_store_connect publishing is intentionally NOT configured here
