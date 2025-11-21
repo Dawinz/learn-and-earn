@@ -7,13 +7,6 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
-      groups:
-        - app_store_credentials # Add your App Store Connect API key here
-      vars:
-        APP_ID: "com.qwantumtech.learnandgrow"
-        XCODE_WORKSPACE: "learn_earn_mobile/ios/Runner.xcworkspace"
-        XCODE_SCHEME: "Runner"
-        BUNDLE_ID: "com.qwantumtech.learnandgrow"
     scripts:
       - name: Get Flutter dependencies
         script: |
@@ -28,13 +21,9 @@ workflows:
       - name: Build ipa for distribution
         script: |
           cd learn_earn_mobile
-          flutter build ipa --release \
-            --build-name=2.0.1 \
-            --build-number=$(($(app-store-connect get-latest-build-number "$APP_ID") + 1))
+          flutter build ipa --release
     artifacts:
       - learn_earn_mobile/build/ios/ipa/*.ipa
-      - /tmp/xcodebuild_logs/*.log
-      - flutter_drive.log
     publishing:
       email:
         recipients:
@@ -42,8 +31,3 @@ workflows:
         notify:
           success: true
           failure: false
-      # IPA BUILD ONLY - NO UPLOAD TO APP STORE
-      # The IPA will be built and available for download in the Artifacts section
-      # You can download it manually and upload to App Store Connect yourself
-      # App Store Connect publishing is completely disabled below
-
